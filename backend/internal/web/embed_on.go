@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/ca0fgh/Hermes/internal/server/middleware"
 	"github.com/gin-gonic/gin"
 )
 

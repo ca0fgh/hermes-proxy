@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
-	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	pkghttputil "github.com/ca0fgh/Hermes/internal/pkg/httputil"
+	"github.com/ca0fgh/Hermes/internal/server/middleware"
+	"github.com/ca0fgh/Hermes/internal/service"
 	coderws "github.com/coder/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

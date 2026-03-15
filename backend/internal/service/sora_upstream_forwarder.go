@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/ca0fgh/Hermes/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 

@@ -20,13 +20,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
-	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
-	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
+	"github.com/ca0fgh/Hermes/internal/config"
+	"github.com/ca0fgh/Hermes/internal/pkg/claude"
+	"github.com/ca0fgh/Hermes/internal/pkg/ctxkey"
+	"github.com/ca0fgh/Hermes/internal/pkg/logger"
+	"github.com/ca0fgh/Hermes/internal/pkg/usagestats"
+	"github.com/ca0fgh/Hermes/internal/util/responseheaders"
+	"github.com/ca0fgh/Hermes/internal/util/urlvalidator"
 	"github.com/cespare/xxhash/v2"
 	"github.com/google/uuid"
 	gocache "github.com/patrickmn/go-cache"
@@ -627,8 +627,8 @@ func NewGatewayService(
 		&svc.userGroupRateSF,
 		"service.gateway",
 	)
-	svc.debugModelRouting.Store(parseDebugEnvBool(os.Getenv("SUB2API_DEBUG_MODEL_ROUTING")))
-	svc.debugClaudeMimic.Store(parseDebugEnvBool(os.Getenv("SUB2API_DEBUG_CLAUDE_MIMIC")))
+	svc.debugModelRouting.Store(parseDebugEnvBool(os.Getenv("HERMES_DEBUG_MODEL_ROUTING")))
+	svc.debugClaudeMimic.Store(parseDebugEnvBool(os.Getenv("HERMES_DEBUG_CLAUDE_MIMIC")))
 	return svc
 }
 

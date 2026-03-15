@@ -8,14 +8,14 @@ package main
 
 import (
 	"context"
-	"github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/handler"
-	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
-	"github.com/Wei-Shaw/sub2api/internal/repository"
-	"github.com/Wei-Shaw/sub2api/internal/server"
-	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/Hermes/ent"
+	"github.com/ca0fgh/Hermes/internal/config"
+	"github.com/ca0fgh/Hermes/internal/handler"
+	"github.com/ca0fgh/Hermes/internal/handler/admin"
+	"github.com/ca0fgh/Hermes/internal/repository"
+	"github.com/ca0fgh/Hermes/internal/server"
+	"github.com/ca0fgh/Hermes/internal/server/middleware"
+	"github.com/ca0fgh/Hermes/internal/service"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
@@ -25,7 +25,7 @@ import (
 
 import (
 	_ "embed"
-	_ "github.com/Wei-Shaw/sub2api/ent/runtime"
+	_ "github.com/ca0fgh/Hermes/ent/runtime"
 )
 
 // Injectors from wire.go:

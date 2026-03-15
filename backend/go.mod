@@ -1,4 +1,4 @@
-module github.com/Wei-Shaw/sub2api
+module github.com/ca0fgh/Hermes
 
 go 1.26.1
 

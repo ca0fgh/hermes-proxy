@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/handler"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/Hermes/internal/config"
+	"github.com/ca0fgh/Hermes/internal/handler"
+	"github.com/ca0fgh/Hermes/internal/service"
 	"github.com/stretchr/testify/require"
 )
 

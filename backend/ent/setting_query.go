@@ -12,8 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/predicate"
-	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/ca0fgh/Hermes/ent/predicate"
+	"github.com/ca0fgh/Hermes/ent/setting"
 )
 
 // SettingQuery is the builder for querying Setting entities.

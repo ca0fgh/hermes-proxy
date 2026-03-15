@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/Wei-Shaw/sub2api/internal/handler/admin"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/Hermes/internal/handler/admin"
+	"github.com/ca0fgh/Hermes/internal/service"
 
 	"github.com/google/wire"
 )

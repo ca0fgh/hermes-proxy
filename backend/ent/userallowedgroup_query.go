@@ -11,10 +11,10 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/Wei-Shaw/sub2api/ent/group"
-	"github.com/Wei-Shaw/sub2api/ent/predicate"
-	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
+	"github.com/ca0fgh/Hermes/ent/group"
+	"github.com/ca0fgh/Hermes/ent/predicate"
+	"github.com/ca0fgh/Hermes/ent/user"
+	"github.com/ca0fgh/Hermes/ent/userallowedgroup"
 )
 
 // UserAllowedGroupQuery is the builder for querying UserAllowedGroup entities.

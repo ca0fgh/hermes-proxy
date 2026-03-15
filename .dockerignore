@@ -1,5 +1,5 @@
 # =============================================================================
-# Docker Ignore File for Sub2API
+# Docker Ignore File for Hermes
 # =============================================================================
 
 # Git
@@ -59,8 +59,8 @@ temp/
 
 # Deploy files (not needed in image)
 deploy/install.sh
-deploy/sub2api.service
-deploy/sub2api-sudoers
+deploy/hermes.service
+deploy/hermes-sudoers
 
 # GoReleaser
 .goreleaser.yaml

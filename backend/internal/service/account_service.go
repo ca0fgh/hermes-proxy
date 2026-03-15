@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	infraerrors "github.com/ca0fgh/Hermes/internal/pkg/errors"
+	"github.com/ca0fgh/Hermes/internal/pkg/pagination"
 )
 
 var (

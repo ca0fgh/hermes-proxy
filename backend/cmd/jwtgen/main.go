@@ -7,10 +7,10 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/Wei-Shaw/sub2api/ent/runtime"
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/repository"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	_ "github.com/ca0fgh/Hermes/ent/runtime"
+	"github.com/ca0fgh/Hermes/internal/config"
+	"github.com/ca0fgh/Hermes/internal/repository"
+	"github.com/ca0fgh/Hermes/internal/service"
 )
 
 func main() {

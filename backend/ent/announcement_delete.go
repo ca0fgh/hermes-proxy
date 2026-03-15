@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/announcement"
-	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/ca0fgh/Hermes/ent/announcement"
+	"github.com/ca0fgh/Hermes/ent/predicate"
 )
 
 // AnnouncementDelete is the builder for deleting a Announcement entity.

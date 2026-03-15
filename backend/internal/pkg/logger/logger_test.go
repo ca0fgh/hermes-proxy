@@ -11,7 +11,7 @@ import (
 
 func TestInit_DualOutput(t *testing.T) {
 	tmpDir := t.TempDir()
-	logPath := filepath.Join(tmpDir, "logs", "sub2api.log")
+	logPath := filepath.Join(tmpDir, "logs", "hermes.log")
 
 	origStdout := os.Stdout
 	origStderr := os.Stderr
@@ -37,7 +37,7 @@ func TestInit_DualOutput(t *testing.T) {
 	err = Init(InitOptions{
 		Level:       "debug",
 		Format:      "json",
-		ServiceName: "sub2api",
+		ServiceName: "hermes",
 		Environment: "test",
 		Output: OutputOptions{
 			ToStdout: true,
@@ -110,7 +110,7 @@ func TestInit_FileOutputFailureDowngrade(t *testing.T) {
 		Output: OutputOptions{
 			ToStdout: true,
 			ToFile:   true,
-			FilePath: filepath.Join(os.DevNull, "logs", "sub2api.log"),
+			FilePath: filepath.Join(os.DevNull, "logs", "hermes.log"),
 		},
 		Rotation: RotationOptions{
 			MaxSizeMB:  10,
@@ -153,7 +153,7 @@ func TestInit_CallerShouldPointToCallsite(t *testing.T) {
 	if err := Init(InitOptions{
 		Level:       "info",
 		Format:      "json",
-		ServiceName: "sub2api",
+		ServiceName: "hermes",
 		Environment: "test",
 		Caller:      true,
 		Output: OutputOptions{

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/Hermes/internal/service"
 )
 
 func UserFromServiceShallow(u *service.User) *User {

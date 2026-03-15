@@ -1,5 +1,5 @@
 # =============================================================================
-# Sub2API Docker Compose - Local Development Build
+# Hermes Docker Compose - Local Development Build
 # =============================================================================
 # Build from local source code for testing changes.
 #
@@ -9,11 +9,11 @@
 # =============================================================================
 
 services:
-  sub2api:
+  hermes:
     build:
       context: ..
       dockerfile: Dockerfile
-    container_name: sub2api-dev
+    container_name: hermes-dev
     restart: unless-stopped
     ports:
       - "${BIND_HOST:-127.0.0.1}:${SERVER_PORT:-8080}:8080"
@@ -27,15 +27,15 @@ services:
       - RUN_MODE=${RUN_MODE:-standard}
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
-      - DATABASE_USER=${POSTGRES_USER:-sub2api}
+      - DATABASE_USER=${POSTGRES_USER:-hermes}
       - DATABASE_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      - DATABASE_DBNAME=${POSTGRES_DB:-sub2api}
+      - DATABASE_DBNAME=${POSTGRES_DB:-hermes}
       - DATABASE_SSLMODE=disable
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DB=${REDIS_DB:-0}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@sub2api.local}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@hermes.local}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - JWT_SECRET=${JWT_SECRET:-}
       - TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY:-}
@@ -46,7 +46,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - sub2api-network
+      - hermes-network
     healthcheck:
       test: ["CMD", "wget", "-q", "-T", "5", "-O", "/dev/null", "http://localhost:8080/health"]
       interval: 30s
@@ -56,20 +56,20 @@ services:
 
   postgres:
     image: postgres:18-alpine
-    container_name: sub2api-postgres-dev
+    container_name: hermes-postgres-dev
     restart: unless-stopped
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-sub2api}
+      - POSTGRES_USER=${POSTGRES_USER:-hermes}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      - POSTGRES_DB=${POSTGRES_DB:-sub2api}
+      - POSTGRES_DB=${POSTGRES_DB:-hermes}
       - PGDATA=/var/lib/postgresql/data
       - TZ=${TZ:-Asia/Shanghai}
     networks:
-      - sub2api-network
+      - hermes-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sub2api} -d ${POSTGRES_DB:-sub2api}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hermes} -d ${POSTGRES_DB:-hermes}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -77,7 +77,7 @@ services:
 
   redis:
     image: redis:8-alpine
-    container_name: sub2api-redis-dev
+    container_name: hermes-redis-dev
     restart: unless-stopped
     volumes:
       - ./redis_data:/data
@@ -92,7 +92,7 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
       - REDISCLI_AUTH=${REDIS_PASSWORD:-}
     networks:
-      - sub2api-network
+      - hermes-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -101,5 +101,5 @@ services:
       start_period: 5s
 
 networks:
-  sub2api-network:
+  hermes-network:
     driver: bridge

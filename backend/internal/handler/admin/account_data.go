@@ -10,15 +10,15 @@ import (
 
 	"log/slog"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/Hermes/internal/pkg/openai"
+	"github.com/ca0fgh/Hermes/internal/pkg/response"
+	"github.com/ca0fgh/Hermes/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	dataType       = "sub2api-data"
-	legacyDataType = "sub2api-bundle"
+	dataType       = "hermes-data"
+	legacyDataType = "hermes-bundle"
 	dataVersion    = 1
 	dataPageCap    = 1000
 )

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/ca0fgh/Hermes/internal/config"
 )
 
 // DefaultProfileName is the name of the built-in Claude CLI profile.

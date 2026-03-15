@@ -5,14 +5,14 @@ import (
 	"database/sql"
 	"time"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/ent/apikey"
-	"github.com/Wei-Shaw/sub2api/ent/group"
-	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
-	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	dbent "github.com/ca0fgh/Hermes/ent"
+	"github.com/ca0fgh/Hermes/ent/apikey"
+	"github.com/ca0fgh/Hermes/ent/group"
+	"github.com/ca0fgh/Hermes/ent/schema/mixins"
+	"github.com/ca0fgh/Hermes/ent/user"
+	"github.com/ca0fgh/Hermes/internal/service"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/ca0fgh/Hermes/internal/pkg/pagination"
 )
 
 type apiKeyRepository struct {

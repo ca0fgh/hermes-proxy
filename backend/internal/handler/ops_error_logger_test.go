@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
-	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	middleware2 "github.com/ca0fgh/Hermes/internal/server/middleware"
+	"github.com/ca0fgh/Hermes/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

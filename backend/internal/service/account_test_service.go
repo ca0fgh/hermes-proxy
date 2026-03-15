@@ -19,12 +19,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
-	"github.com/Wei-Shaw/sub2api/internal/util/soraerror"
-	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
+	"github.com/ca0fgh/Hermes/internal/config"
+	"github.com/ca0fgh/Hermes/internal/pkg/claude"
+	"github.com/ca0fgh/Hermes/internal/pkg/geminicli"
+	"github.com/ca0fgh/Hermes/internal/pkg/openai"
+	"github.com/ca0fgh/Hermes/internal/util/soraerror"
+	"github.com/ca0fgh/Hermes/internal/util/urlvalidator"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

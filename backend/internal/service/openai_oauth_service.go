@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
+	infraerrors "github.com/ca0fgh/Hermes/internal/pkg/errors"
+	"github.com/ca0fgh/Hermes/internal/pkg/httpclient"
+	"github.com/ca0fgh/Hermes/internal/pkg/openai"
 )
 
 var openAISoraSessionAuthURL = "https://sora.chatgpt.com/api/auth/session"

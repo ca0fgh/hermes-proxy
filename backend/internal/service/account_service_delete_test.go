@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/ca0fgh/Hermes/internal/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
 

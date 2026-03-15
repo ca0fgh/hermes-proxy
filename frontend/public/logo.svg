@@ -1,0 +1,35 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="36" y1="28" x2="216" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10192B"/>
+      <stop offset="1" stop-color="#1C3F73"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(184 68) rotate(134.744) scale(146.001)">
+      <stop stop-color="#4FE3D4" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#4FE3D4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="wing" x1="36" y1="70" x2="132" y2="146" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE08A"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <linearGradient id="glyph" x1="86" y1="78" x2="186" y2="184" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#87F8EE"/>
+      <stop offset="1" stop-color="#2EC5FF"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="16" y="16" width="224" height="224" rx="56" fill="url(#bg)"/>
+  <rect x="16.75" y="16.75" width="222.5" height="222.5" rx="55.25" stroke="white" stroke-opacity="0.08" stroke-width="1.5"/>
+  <rect x="16" y="16" width="224" height="224" rx="56" fill="url(#glow)"/>
+
+  <path d="M49 87L98 57C104 53 111 53 117 56L127 62L77 93C71 97 64 97 58 94L49 87Z" fill="url(#wing)"/>
+  <path d="M40 114L109 79C115 76 122 76 128 79L137 84L68 120C62 123 55 123 49 120L40 114Z" fill="url(#wing)"/>
+  <path d="M34 143L104 111C110 108 117 108 123 111L131 116L62 149C56 152 49 152 43 149L34 143Z" fill="url(#wing)"/>
+
+  <rect x="82" y="76" width="28" height="108" rx="14" fill="url(#glyph)"/>
+  <rect x="146" y="76" width="28" height="108" rx="14" fill="url(#glyph)"/>
+  <path d="M99 114H157C163 114 168 119 168 125C168 131 163 136 157 136H99C93 136 88 131 88 125C88 119 93 114 99 114Z" fill="url(#glyph)"/>
+  <path d="M88 187L157 78H183L114 187H88Z" fill="url(#glyph)" fill-opacity="0.9"/>
+
+  <path d="M88 187L157 78H183L114 187H88Z" stroke="white" stroke-opacity="0.12" stroke-width="2"/>
+</svg>

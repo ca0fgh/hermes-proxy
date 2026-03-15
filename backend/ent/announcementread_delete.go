@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/announcementread"
-	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/ca0fgh/Hermes/ent/announcementread"
+	"github.com/ca0fgh/Hermes/ent/predicate"
 )
 
 // AnnouncementReadDelete is the builder for deleting a AnnouncementRead entity.

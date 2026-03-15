@@ -2,8 +2,8 @@
 package routes
 
 import (
-	"github.com/Wei-Shaw/sub2api/internal/handler"
-	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
+	"github.com/ca0fgh/Hermes/internal/handler"
+	"github.com/ca0fgh/Hermes/internal/server/middleware"
 
 	"github.com/gin-gonic/gin"
 )

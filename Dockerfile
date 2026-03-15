@@ -1,5 +1,5 @@
 # =============================================================================
-# Sub2API Multi-Stage Dockerfile
+# Hermes Multi-Stage Dockerfile
 # =============================================================================
 # Stage 1: Build frontend
 # Stage 2: Build Go backend with embedded frontend
@@ -70,7 +70,7 @@ RUN VERSION_VALUE="${VERSION}" && \
     -tags embed \
     -ldflags="-s -w -X main.Version=${VERSION_VALUE} -X main.Commit=${COMMIT} -X main.Date=${DATE_VALUE} -X main.BuildType=release" \
     -trimpath \
-    -o /app/sub2api \
+    -o /app/hermes \
     ./cmd/server
 
 # -----------------------------------------------------------------------------
@@ -85,8 +85,8 @@ FROM ${ALPINE_IMAGE}
 
 # Labels
 LABEL maintainer="Wei-Shaw <github.com/Wei-Shaw>"
-LABEL description="Sub2API - AI API Gateway Platform"
-LABEL org.opencontainers.image.source="https://github.com/Wei-Shaw/sub2api"
+LABEL description="Hermes - AI API Gateway Platform"
+LABEL org.opencontainers.image.source="https://github.com/ca0fgh/Hermes"
 
 # Install runtime dependencies
 RUN apk add --no-cache \
@@ -107,21 +107,21 @@ COPY --from=pg-client /usr/local/bin/psql /usr/local/bin/psql
 COPY --from=pg-client /usr/local/lib/libpq.so.5* /usr/local/lib/
 
 # Create non-root user
-RUN addgroup -g 1000 sub2api && \
-    adduser -u 1000 -G sub2api -s /bin/sh -D sub2api
+RUN addgroup -g 1000 hermes && \
+    adduser -u 1000 -G hermes -s /bin/sh -D hermes
 
 # Set working directory
 WORKDIR /app
 
 # Copy binary/resources with ownership to avoid extra full-layer chown copy
-COPY --from=backend-builder --chown=sub2api:sub2api /app/sub2api /app/sub2api
-COPY --from=backend-builder --chown=sub2api:sub2api /app/backend/resources /app/resources
+COPY --from=backend-builder --chown=hermes:hermes /app/hermes /app/hermes
+COPY --from=backend-builder --chown=hermes:hermes /app/backend/resources /app/resources
 
 # Create data directory
-RUN mkdir -p /app/data && chown sub2api:sub2api /app/data
+RUN mkdir -p /app/data && chown hermes:hermes /app/data
 
 # Switch to non-root user
-USER sub2api
+USER hermes
 
 # Expose port (can be overridden by SERVER_PORT env var)
 EXPOSE 8080
@@ -131,4 +131,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD wget -q -T 5 -O /dev/null http://localhost:${SERVER_PORT:-8080}/health || exit 1
 
 # Run the application
-ENTRYPOINT ["/app/sub2api"]
+ENTRYPOINT ["/app/hermes"]

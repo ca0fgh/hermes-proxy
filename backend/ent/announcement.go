@@ -10,8 +10,8 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/Wei-Shaw/sub2api/ent/announcement"
-	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/ca0fgh/Hermes/ent/announcement"
+	"github.com/ca0fgh/Hermes/internal/domain"
 )
 
 // Announcement is the model entity for the Announcement schema.

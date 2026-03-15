@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
+	"github.com/ca0fgh/Hermes/internal/pkg/openai"
 	"github.com/stretchr/testify/require"
 )
 

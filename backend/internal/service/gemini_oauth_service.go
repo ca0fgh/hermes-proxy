@@ -12,14 +12,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/ca0fgh/Hermes/internal/config"
+	"github.com/ca0fgh/Hermes/internal/pkg/geminicli"
+	"github.com/ca0fgh/Hermes/internal/pkg/httpclient"
+	"github.com/ca0fgh/Hermes/internal/pkg/logger"
 )
 
 const (
-	// Canonical tier IDs used by sub2api (2026-aligned).
+	// Canonical tier IDs used by Hermes (2026-aligned).
 	GeminiTierGoogleOneFree    = "google_one_free"
 	GeminiTierGoogleAIPro      = "google_ai_pro"
 	GeminiTierGoogleAIUltra    = "google_ai_ultra"

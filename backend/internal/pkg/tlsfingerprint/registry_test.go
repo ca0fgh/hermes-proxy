@@ -3,7 +3,7 @@ package tlsfingerprint
 import (
 	"testing"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/ca0fgh/Hermes/internal/config"
 )
 
 func TestNewRegistry(t *testing.T) {

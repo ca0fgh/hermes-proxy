@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	infraerrors "github.com/ca0fgh/Hermes/internal/pkg/errors"
 )
 
 const (

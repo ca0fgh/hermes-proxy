@@ -11,11 +11,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/account"
-	"github.com/Wei-Shaw/sub2api/ent/group"
-	"github.com/Wei-Shaw/sub2api/ent/predicate"
-	"github.com/Wei-Shaw/sub2api/ent/proxy"
-	"github.com/Wei-Shaw/sub2api/ent/usagelog"
+	"github.com/ca0fgh/Hermes/ent/account"
+	"github.com/ca0fgh/Hermes/ent/group"
+	"github.com/ca0fgh/Hermes/ent/predicate"
+	"github.com/ca0fgh/Hermes/ent/proxy"
+	"github.com/ca0fgh/Hermes/ent/usagelog"
 )
 
 // AccountUpdate is the builder for updating Account entities.

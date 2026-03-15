@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/domain"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/ca0fgh/Hermes/internal/domain"
+	"github.com/ca0fgh/Hermes/internal/pkg/pagination"
 )
 
 const (

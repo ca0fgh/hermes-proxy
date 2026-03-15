@@ -362,8 +362,8 @@ func TestLoadDefaultDashboardCacheConfig(t *testing.T) {
 	if !cfg.Dashboard.Enabled {
 		t.Fatalf("Dashboard.Enabled = false, want true")
 	}
-	if cfg.Dashboard.KeyPrefix != "sub2api:" {
-		t.Fatalf("Dashboard.KeyPrefix = %q, want %q", cfg.Dashboard.KeyPrefix, "sub2api:")
+	if cfg.Dashboard.KeyPrefix != "hermes:" {
+		t.Fatalf("Dashboard.KeyPrefix = %q, want %q", cfg.Dashboard.KeyPrefix, "hermes:")
 	}
 	if cfg.Dashboard.StatsFreshTTLSeconds != 15 {
 		t.Fatalf("Dashboard.StatsFreshTTLSeconds = %d, want 15", cfg.Dashboard.StatsFreshTTLSeconds)
@@ -567,7 +567,7 @@ func TestConfigAddressHelpers(t *testing.T) {
 		Port:     5432,
 		User:     "postgres",
 		Password: "",
-		DBName:   "sub2api",
+		DBName:   "hermes",
 		SSLMode:  "disable",
 	}
 	if !strings.Contains(dbCfg.DSN(), "password=") {
