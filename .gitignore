@@ -85,6 +85,7 @@ temp/
 .cache/
 .dev/
 .serena/
+runtime/
 
 # ===================
 # 构建产物
@@ -132,4 +133,3 @@ docs/*
 frontend/coverage/
 aicodex
 output/
-
