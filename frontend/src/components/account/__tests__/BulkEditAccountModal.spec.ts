@@ -38,6 +38,7 @@ function mountModal() {
       show: true,
       accountIds: [1, 2],
       selectedPlatforms: ['antigravity'],
+      selectedTypes: ['oauth'],
       proxies: [],
       groups: []
     } as any,
@@ -47,30 +48,37 @@ function mountModal() {
         Select: true,
         ProxySelector: true,
         GroupSelector: true,
-        Icon: true
+        Icon: true,
+        ModelIcon: true
       }
     }
   })
 }
 
 describe('BulkEditAccountModal', () => {
-  it('antigravity 白名单包含 Gemini 图片模型且过滤掉普通 GPT 模型', () => {
+  it('antigravity 白名单操作会填入 Gemini 图片模型且过滤掉 OpenAI 模型', async () => {
     const wrapper = mountModal()
+    const fillRelatedButton = wrapper
+      .findAll('button')
+      .find((btn) => btn.text().includes('admin.accounts.fillRelatedModels'))
 
-    expect(wrapper.text()).toContain('Gemini 3.1 Flash Image')
-    expect(wrapper.text()).toContain('Gemini 3 Pro Image (Legacy)')
-    expect(wrapper.text()).not.toContain('GPT-5.3 Codex')
+    expect(fillRelatedButton).toBeTruthy()
+    await fillRelatedButton!.trigger('click')
+
+    expect(wrapper.text()).toContain('gemini-3.1-flash-image')
+    expect(wrapper.text()).toContain('gemini-3-pro-image')
+    expect(wrapper.text()).not.toContain('gpt-5.3-codex')
   })
 
-  it('antigravity 映射预设包含图片映射并过滤 OpenAI 预设', async () => {
+  it('antigravity 映射预设包含图片映射且不包含 OpenAI 预设', async () => {
     const wrapper = mountModal()
 
     const mappingTab = wrapper.findAll('button').find((btn) => btn.text().includes('admin.accounts.modelMapping'))
     expect(mappingTab).toBeTruthy()
     await mappingTab!.trigger('click')
 
-    expect(wrapper.text()).toContain('Gemini 3.1 Image')
-    expect(wrapper.text()).toContain('G3 Image→3.1')
-    expect(wrapper.text()).not.toContain('GPT-5.3 Codex')
+    expect(wrapper.text()).toContain('3.1-Flash-Image透传')
+    expect(wrapper.text()).toContain('3-Pro-Image→3.1')
+    expect(wrapper.text()).not.toContain('GPT-5.3 Codex Spark')
   })
 })
