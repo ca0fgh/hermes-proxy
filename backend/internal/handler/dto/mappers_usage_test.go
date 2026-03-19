@@ -2,6 +2,7 @@ package dto
 
 import (
 	"testing"
+	"time"
 
 	"github.com/ca0fgh/hermes-proxy/internal/service"
 	"github.com/stretchr/testify/require"
@@ -106,39 +107,44 @@ func TestUsageLogFromService_IncludesServiceTierForUserAndAdmin(t *testing.T) {
 	require.InDelta(t, 1.5, *adminDTO.AccountRateMultiplier, 1e-12)
 }
 
-func TestAccountFromServiceShallow_UsesStoredQuotaWindowValues(t *testing.T) {
+func TestAccountFromServiceShallow_UsesEffectiveQuotaWindowValues(t *testing.T) {
 	t.Parallel()
 
+	now := time.Now().UTC()
 	account := &service.Account{
 		Type: service.AccountTypeAPIKey,
 		Extra: map[string]any{
 			"quota_daily_limit":       120.0,
 			"quota_daily_used":        3.97,
-			"quota_daily_start":       "2026-03-16T00:00:00Z",
+			"quota_daily_start":       now.Add(-48 * time.Hour).Format(time.RFC3339),
 			"quota_daily_reset_mode":  "fixed",
 			"quota_daily_reset_hour":  0.0,
 			"quota_reset_timezone":    "UTC",
-			"quota_daily_reset_at":    "2026-03-17T00:00:00Z",
+			"quota_daily_reset_at":    now.Add(-1 * time.Hour).Format(time.RFC3339),
 			"quota_weekly_limit":      840.0,
 			"quota_weekly_used":       12.34,
-			"quota_weekly_start":      "2026-03-16T00:00:00Z",
+			"quota_weekly_start":      now.Add(-14 * 24 * time.Hour).Format(time.RFC3339),
 			"quota_weekly_reset_mode": "fixed",
 			"quota_weekly_reset_day":  1.0,
 			"quota_weekly_reset_hour": 0.0,
-			"quota_weekly_reset_at":   "2026-03-23T00:00:00Z",
+			"quota_weekly_reset_at":   now.Add(-2 * time.Hour).Format(time.RFC3339),
 		},
 	}
 
 	dtoAccount := AccountFromServiceShallow(account)
 	require.NotNil(t, dtoAccount)
 	require.NotNil(t, dtoAccount.QuotaDailyUsed)
-	require.InDelta(t, 3.97, *dtoAccount.QuotaDailyUsed, 1e-12)
+	require.InDelta(t, 0.0, *dtoAccount.QuotaDailyUsed, 1e-12)
 	require.NotNil(t, dtoAccount.QuotaDailyResetAt)
-	require.Equal(t, "2026-03-17T00:00:00Z", *dtoAccount.QuotaDailyResetAt)
+	dailyResetAt, err := time.Parse(time.RFC3339, *dtoAccount.QuotaDailyResetAt)
+	require.NoError(t, err)
+	require.True(t, dailyResetAt.After(now))
 	require.NotNil(t, dtoAccount.QuotaWeeklyUsed)
-	require.InDelta(t, 12.34, *dtoAccount.QuotaWeeklyUsed, 1e-12)
+	require.InDelta(t, 0.0, *dtoAccount.QuotaWeeklyUsed, 1e-12)
 	require.NotNil(t, dtoAccount.QuotaWeeklyResetAt)
-	require.Equal(t, "2026-03-23T00:00:00Z", *dtoAccount.QuotaWeeklyResetAt)
+	weeklyResetAt, err := time.Parse(time.RFC3339, *dtoAccount.QuotaWeeklyResetAt)
+	require.NoError(t, err)
+	require.True(t, weeklyResetAt.After(now))
 }
 
 func f64Ptr(value float64) *float64 {

@@ -8,6 +8,18 @@ import (
 	"github.com/ca0fgh/hermes-proxy/internal/service"
 )
 
+func cloneMapStringAny(src map[string]any) map[string]any {
+	if src == nil {
+		return nil
+	}
+
+	out := make(map[string]any, len(src))
+	for key, value := range src {
+		out[key] = value
+	}
+	return out
+}
+
 func UserFromServiceShallow(u *service.User) *User {
 	if u == nil {
 		return nil
@@ -188,6 +200,7 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 	if a == nil {
 		return nil
 	}
+	extra := cloneMapStringAny(a.Extra)
 	out := &Account{
 		ID:                      a.ID,
 		Name:                    a.Name,
@@ -195,7 +208,7 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		Platform:                a.Platform,
 		Type:                    a.Type,
 		Credentials:             a.Credentials,
-		Extra:                   a.Extra,
+		Extra:                   extra,
 		ProxyID:                 a.ProxyID,
 		Concurrency:             a.Concurrency,
 		LoadFactor:              a.LoadFactor,
@@ -273,19 +286,31 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		}
 		if limit := a.GetQuotaDailyLimit(); limit > 0 {
 			out.QuotaDailyLimit = &limit
-			used := a.GetQuotaDailyUsed()
+			used := a.GetEffectiveQuotaDailyUsed()
 			out.QuotaDailyUsed = &used
+			if out.Extra != nil {
+				out.Extra["quota_daily_used"] = used
+			}
 		}
 		if limit := a.GetQuotaWeeklyLimit(); limit > 0 {
 			out.QuotaWeeklyLimit = &limit
-			used := a.GetQuotaWeeklyUsed()
+			used := a.GetEffectiveQuotaWeeklyUsed()
 			out.QuotaWeeklyUsed = &used
+			if out.Extra != nil {
+				out.Extra["quota_weekly_used"] = used
+			}
 		}
 		// 固定时间重置配置
 		if mode := a.GetQuotaDailyResetMode(); mode == "fixed" {
 			out.QuotaDailyResetMode = &mode
 			hour := a.GetQuotaDailyResetHour()
 			out.QuotaDailyResetHour = &hour
+			if resetAt := a.GetEffectiveQuotaDailyResetAt(); resetAt != "" {
+				out.QuotaDailyResetAt = &resetAt
+				if out.Extra != nil {
+					out.Extra["quota_daily_reset_at"] = resetAt
+				}
+			}
 		}
 		if mode := a.GetQuotaWeeklyResetMode(); mode == "fixed" {
 			out.QuotaWeeklyResetMode = &mode
@@ -293,18 +318,16 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 			out.QuotaWeeklyResetDay = &day
 			hour := a.GetQuotaWeeklyResetHour()
 			out.QuotaWeeklyResetHour = &hour
+			if resetAt := a.GetEffectiveQuotaWeeklyResetAt(); resetAt != "" {
+				out.QuotaWeeklyResetAt = &resetAt
+				if out.Extra != nil {
+					out.Extra["quota_weekly_reset_at"] = resetAt
+				}
+			}
 		}
 		if a.GetQuotaDailyResetMode() == "fixed" || a.GetQuotaWeeklyResetMode() == "fixed" {
 			tz := a.GetQuotaResetTimezone()
 			out.QuotaResetTimezone = &tz
-		}
-		if a.Extra != nil {
-			if v, ok := a.Extra["quota_daily_reset_at"].(string); ok && v != "" {
-				out.QuotaDailyResetAt = &v
-			}
-			if v, ok := a.Extra["quota_weekly_reset_at"].(string); ok && v != "" {
-				out.QuotaWeeklyResetAt = &v
-			}
 		}
 	}
 

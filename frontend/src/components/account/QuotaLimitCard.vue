@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+const DEFAULT_QUOTA_RESET_TIMEZONE = 'Asia/Shanghai'
 
 const props = defineProps<{
   totalLimit: number | null
@@ -63,8 +64,8 @@ const hasFixedMode = computed(() =>
 
 // Common timezone options
 const timezoneOptions = [
-  'UTC',
   'Asia/Shanghai',
+  'UTC',
   'Asia/Tokyo',
   'Asia/Seoul',
   'Asia/Singapore',
@@ -115,7 +116,7 @@ const onDailyModeChange = (e: Event) => {
   emit('update:dailyResetMode', val)
   if (val === 'fixed') {
     if (props.dailyResetHour == null) emit('update:dailyResetHour', 0)
-    if (!props.resetTimezone) emit('update:resetTimezone', 'UTC')
+    if (!props.resetTimezone) emit('update:resetTimezone', DEFAULT_QUOTA_RESET_TIMEZONE)
   }
 }
 
@@ -125,7 +126,7 @@ const onWeeklyModeChange = (e: Event) => {
   if (val === 'fixed') {
     if (props.weeklyResetDay == null) emit('update:weeklyResetDay', 1)
     if (props.weeklyResetHour == null) emit('update:weeklyResetHour', 0)
-    if (!props.resetTimezone) emit('update:resetTimezone', 'UTC')
+    if (!props.resetTimezone) emit('update:resetTimezone', DEFAULT_QUOTA_RESET_TIMEZONE)
   }
 }
 </script>
@@ -197,7 +198,7 @@ const onWeeklyModeChange = (e: Event) => {
           </div>
           <p class="input-hint">
             <template v-if="dailyResetMode === 'fixed'">
-              {{ t('admin.accounts.quotaDailyLimitHintFixed', { hour: String(dailyResetHour ?? 0).padStart(2, '0'), timezone: resetTimezone || 'UTC' }) }}
+              {{ t('admin.accounts.quotaDailyLimitHintFixed', { hour: String(dailyResetHour ?? 0).padStart(2, '0'), timezone: resetTimezone || DEFAULT_QUOTA_RESET_TIMEZONE }) }}
             </template>
             <template v-else>
               {{ t('admin.accounts.quotaDailyLimitHint') }}
@@ -253,7 +254,7 @@ const onWeeklyModeChange = (e: Event) => {
           </div>
           <p class="input-hint">
             <template v-if="weeklyResetMode === 'fixed'">
-              {{ t('admin.accounts.quotaWeeklyLimitHintFixed', { day: t('admin.accounts.dayOfWeek.' + (dayOptions.find(d => d.value === (weeklyResetDay ?? 1))?.key || 'monday')), hour: String(weeklyResetHour ?? 0).padStart(2, '0'), timezone: resetTimezone || 'UTC' }) }}
+              {{ t('admin.accounts.quotaWeeklyLimitHintFixed', { day: t('admin.accounts.dayOfWeek.' + (dayOptions.find(d => d.value === (weeklyResetDay ?? 1))?.key || 'monday')), hour: String(weeklyResetHour ?? 0).padStart(2, '0'), timezone: resetTimezone || DEFAULT_QUOTA_RESET_TIMEZONE }) }}
             </template>
             <template v-else>
               {{ t('admin.accounts.quotaWeeklyLimitHint') }}
@@ -265,7 +266,7 @@ const onWeeklyModeChange = (e: Event) => {
         <div v-if="hasFixedMode">
           <label class="input-label">{{ t('admin.accounts.quotaResetTimezone') }}</label>
           <select
-            :value="resetTimezone || 'UTC'"
+            :value="resetTimezone || DEFAULT_QUOTA_RESET_TIMEZONE"
             @change="emit('update:resetTimezone', ($event.target as HTMLSelectElement).value)"
             class="input text-sm"
           >

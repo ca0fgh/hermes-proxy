@@ -15,6 +15,8 @@ import (
 	"github.com/ca0fgh/hermes-proxy/internal/domain"
 )
 
+const DefaultQuotaResetTimezone = "Asia/Shanghai"
+
 type Account struct {
 	ID          int64
 	Name        string
@@ -139,6 +141,14 @@ func (a *Account) IsOverloaded() bool {
 
 func (a *Account) IsOAuth() bool {
 	return a.Type == AccountTypeOAuth || a.Type == AccountTypeSetupToken
+}
+
+func (a *Account) IsListPinned() bool {
+	if a == nil || a.Extra == nil {
+		return false
+	}
+	enabled, ok := a.Extra["list_pinned"].(bool)
+	return ok && enabled
 }
 
 func (a *Account) IsGemini() bool {
@@ -1395,12 +1405,12 @@ func (a *Account) GetQuotaWeeklyResetHour() int {
 	return a.getExtraInt("quota_weekly_reset_hour")
 }
 
-// GetQuotaResetTimezone 获取固定重置的时区名（IANA），默认 "UTC"
+// GetQuotaResetTimezone 获取固定重置的时区名（IANA），默认 "Asia/Shanghai"
 func (a *Account) GetQuotaResetTimezone() string {
 	if tz := a.getExtraString("quota_reset_timezone"); tz != "" {
 		return tz
 	}
-	return "UTC"
+	return DefaultQuotaResetTimezone
 }
 
 func (a *Account) GetEffectiveQuotaDailyResetAt() string {
@@ -1514,7 +1524,7 @@ func ComputeQuotaResetAt(extra map[string]any) {
 	now := time.Now()
 	tzName, _ := extra["quota_reset_timezone"].(string)
 	if tzName == "" {
-		tzName = "UTC"
+		tzName = DefaultQuotaResetTimezone
 	}
 	tz, err := time.LoadLocation(tzName)
 	if err != nil {

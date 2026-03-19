@@ -278,6 +278,7 @@ onUnmounted(() => {
 interface Props {
   columns: Column[]
   data: any[]
+  pinnedRowKeys?: Array<string | number>
   loading?: boolean
   stickyFirstColumn?: boolean
   stickyActionsColumn?: boolean
@@ -306,6 +307,7 @@ const props = withDefaults(defineProps<Props>(), {
   stickyFirstColumn: true,
   stickyActionsColumn: true,
   expandableActions: true,
+  pinnedRowKeys: () => [],
   defaultSortOrder: 'asc',
   serverSideSort: false
 })
@@ -487,11 +489,17 @@ const sortedData = computed(() => {
 
   const key = sortKey.value
   const order = sortOrder.value
+  const pinnedRowKeySet = new Set(props.pinnedRowKeys ?? [])
 
   // Stable sort (tie-break with original index) to avoid jitter when values are equal.
   return props.data
     .map((row, index) => ({ row, index }))
     .sort((a, b) => {
+      const aPinned = pinnedRowKeySet.has(resolveRowKey(a.row, a.index))
+      const bPinned = pinnedRowKeySet.has(resolveRowKey(b.row, b.index))
+      if (aPinned !== bPinned) {
+        return aPinned ? -1 : 1
+      }
       const cmp = compareSortValues(a.row?.[key], b.row?.[key])
       if (cmp !== 0) return order === 'asc' ? cmp : -cmp
       return a.index - b.index

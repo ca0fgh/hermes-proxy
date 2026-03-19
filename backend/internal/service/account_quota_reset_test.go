@@ -485,6 +485,9 @@ func TestComputeQuotaResetAt_FixedDaily_WithTimezone(t *testing.T) {
 }
 
 func TestComputeQuotaResetAt_DefaultTimezone(t *testing.T) {
+	tz, err := time.LoadLocation("Asia/Shanghai")
+	require.NoError(t, err)
+
 	extra := map[string]any{
 		"quota_daily_reset_mode": "fixed",
 		"quota_daily_reset_hour": float64(12),
@@ -495,8 +498,8 @@ func TestComputeQuotaResetAt_DefaultTimezone(t *testing.T) {
 
 	resetAt, err := time.Parse(time.RFC3339, resetAtStr)
 	require.NoError(t, err)
-	// Default timezone is UTC
-	assert.Equal(t, 12, resetAt.UTC().Hour())
+	// Default timezone is Asia/Shanghai
+	assert.Equal(t, 12, resetAt.In(tz).Hour())
 }
 
 func TestComputeQuotaResetAt_InvalidHour_ClampedToZero(t *testing.T) {

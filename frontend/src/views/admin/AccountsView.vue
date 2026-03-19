@@ -136,6 +136,7 @@
         <DataTable
           :columns="cols"
           :data="accounts"
+          :pinned-row-keys="pinnedAccountIds"
           :loading="loading"
           row-key="id"
           default-sort-key="name"
@@ -156,7 +157,15 @@
           </template>
           <template #cell-name="{ row, value }">
             <div class="flex flex-col">
-              <span class="font-medium text-gray-900 dark:text-white">{{ value }}</span>
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-gray-900 dark:text-white">{{ value }}</span>
+                <span
+                  v-if="isAccountListPinned(row)"
+                  class="inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                >
+                  {{ t('admin.accounts.pinned') }}
+                </span>
+              </div>
               <span
                 v-if="row.extra?.email_address"
                 class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]"
@@ -271,7 +280,7 @@
     <AccountTestModal :show="showTest" :account="testingAcc" @close="closeTestModal" />
     <AccountStatsModal :show="showStats" :account="statsAcc" @close="closeStatsModal" />
     <ScheduledTestsPanel :show="showSchedulePanel" :account-id="scheduleAcc?.id ?? null" :model-options="scheduleModelOptions" @close="closeSchedulePanel" />
-    <AccountActionMenu :show="menu.show" :account="menu.acc" :position="menu.pos" @close="menu.show = false" @test="handleTest" @stats="handleViewStats" @schedule="handleSchedule" @reauth="handleReAuth" @refresh-token="handleRefresh" @recover-state="handleRecoverState" @reset-quota="handleResetQuota" />
+    <AccountActionMenu :show="menu.show" :account="menu.acc" :position="menu.pos" @close="menu.show = false" @test="handleTest" @stats="handleViewStats" @toggle-pin="handleTogglePin" @schedule="handleSchedule" @reauth="handleReAuth" @refresh-token="handleRefresh" @recover-state="handleRecoverState" @reset-quota="handleResetQuota" />
     <SyncFromCrsModal :show="showSync" @close="showSync = false" @synced="reload" />
     <ImportDataModal :show="showImportData" @close="showImportData = false" @imported="handleDataImported" />
     <BulkEditAccountModal :show="showBulkEdit" :account-ids="selIds" :selected-platforms="selPlatforms" :selected-types="selTypes" :proxies="proxies" :groups="groups" @close="showBulkEdit = false" @updated="handleBulkUpdated" />
@@ -863,8 +872,13 @@ const cols = computed(() =>
     col.key === 'select' || col.key === 'name' || col.key === 'actions' || !hiddenColumns.has(col.key)
   )
 )
+const pinnedAccountIds = computed(() =>
+  accounts.value.filter(account => isAccountListPinned(account)).map(account => account.id)
+)
 
 const handleEdit = (a: Account) => { edAcc.value = a; showEdit.value = true }
+const isAccountListPinned = (account: Account) =>
+  (account.extra as Record<string, unknown> | undefined)?.list_pinned === true
 const openMenu = (a: Account, e: MouseEvent) => {
   menu.acc = a
 
@@ -1184,6 +1198,21 @@ const handleRefresh = async (a: Account) => {
     enterAutoRefreshSilentWindow()
   } catch (error) {
     console.error('Failed to refresh credentials:', error)
+  }
+}
+const handleTogglePin = async (a: Account) => {
+  try {
+    const updated = await adminAPI.accounts.setListPinned(a.id, !isAccountListPinned(a))
+    patchAccountInList(updated)
+    enterAutoRefreshSilentWindow()
+    appStore.showSuccess(
+      isAccountListPinned(a)
+        ? t('admin.accounts.unpinFromTopSuccess')
+        : t('admin.accounts.pinToTopSuccess')
+    )
+  } catch (error) {
+    console.error('Failed to toggle account pin:', error)
+    appStore.showError(t('admin.accounts.pinToggleFailed'))
   }
 }
 const handleRecoverState = async (a: Account) => {

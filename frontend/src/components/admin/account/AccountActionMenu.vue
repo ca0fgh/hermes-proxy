@@ -18,6 +18,10 @@
               <Icon name="chart" size="sm" class="text-indigo-500" />
               {{ t('admin.accounts.viewStats') }}
             </button>
+            <button @click="$emit('toggle-pin', account); $emit('close')" class="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-dark-700">
+              <Icon name="badge" size="sm" class="text-amber-500" />
+              {{ isListPinned ? t('admin.accounts.unpinFromTop') : t('admin.accounts.pinToTop') }}
+            </button>
             <button @click="$emit('schedule', account); $emit('close')" class="flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-dark-700">
               <Icon name="clock" size="sm" class="text-orange-500" />
               {{ t('admin.scheduledTests.schedule') }}
@@ -55,8 +59,9 @@ import { Icon } from '@/components/icons'
 import type { Account } from '@/types'
 
 const props = defineProps<{ show: boolean; account: Account | null; position: { top: number; left: number } | null }>()
-const emit = defineEmits(['close', 'test', 'stats', 'schedule', 'reauth', 'refresh-token', 'recover-state', 'reset-quota'])
+const emit = defineEmits(['close', 'test', 'stats', 'toggle-pin', 'schedule', 'reauth', 'refresh-token', 'recover-state', 'reset-quota'])
 const { t } = useI18n()
+const isListPinned = computed(() => (props.account?.extra as Record<string, unknown> | undefined)?.list_pinned === true)
 const isRateLimited = computed(() => {
   if (props.account?.rate_limit_reset_at && new Date(props.account.rate_limit_reset_at) > new Date()) {
     return true

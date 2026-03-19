@@ -137,6 +137,14 @@ export async function update(id: number, updates: UpdateAccountRequest): Promise
   return data
 }
 
+export async function setListPinned(id: number, listPinned: boolean): Promise<Account> {
+  return update(id, {
+    extra: {
+      list_pinned: listPinned
+    }
+  })
+}
+
 /**
  * Check mixed-channel risk for account-group binding.
  */
@@ -624,6 +632,7 @@ export const accountsAPI = {
   getById,
   create,
   update,
+  setListPinned,
   checkMixedChannelRisk,
   delete: deleteAccount,
   toggleStatus,
