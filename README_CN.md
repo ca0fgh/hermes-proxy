@@ -340,22 +340,28 @@ cd hermes-proxy
 # 2. 安装 pnpm（如果还没有安装）
 npm install -g pnpm
 
-# 3. 编译前端
+# 3. 启动本地 Redis，并将持久化目录固定到项目运行时目录（推荐）
+python3 tools/start_local_redis.py --daemonize
+# Redis 快照 / AOF 文件将写入 .hermes-proxy-runtime/redis/
+
+# 4. 编译前端
 cd frontend
 pnpm install
 pnpm run build
 # 构建产物输出到 ../backend/internal/web/dist/
 
-# 4. 编译后端（嵌入前端）
+# 5. 编译后端（嵌入前端）
 cd ../backend
 go build -tags embed -o hermes-proxy ./cmd/server
 
-# 5. 创建配置文件
+# 6. 创建配置文件
 cp ../deploy/config.example.yaml ./config.yaml
 
-# 6. 编辑配置
+# 7. 编辑配置
 nano config.yaml
 ```
+
+> **Redis 说明：** 如果你手动启动 Redis，不要在仓库根目录直接用默认参数运行 `redis-server`。请优先使用 `python3 tools/start_local_redis.py --daemonize`，或者至少显式指定 `--dir`，这样 `dump.rdb` 和 AOF 文件会落到 `.hermes-proxy-runtime/redis/`，不会再写回仓库根目录。
 
 > **注意：** `-tags embed` 参数会将前端嵌入到二进制文件中。不使用此参数编译的程序将不包含前端界面。
 

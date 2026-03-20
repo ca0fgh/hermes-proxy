@@ -86,6 +86,10 @@ temp/
 .dev/
 .serena/
 .hermes-proxy-runtime/
+dump.rdb
+appendonly.aof
+appendonly.aof.*
+appendonlydir/
 
 # ===================
 # 构建产物
@@ -115,7 +119,9 @@ backend/.installed
 # ===================
 # 其他
 # ===================
-tests
+/tests
+!tools/tests/
+!tools/tests/*.py
 CLAUDE.md
 .claude
 scripts

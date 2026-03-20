@@ -324,22 +324,28 @@ cd hermes-proxy
 # 2. Install pnpm (if not already installed)
 npm install -g pnpm
 
-# 3. Build frontend
+# 3. Start local Redis with project-scoped persistence (recommended for source builds)
+python3 tools/start_local_redis.py --daemonize
+# Redis snapshot/AOF files will live under .hermes-proxy-runtime/redis/
+
+# 4. Build frontend
 cd frontend
 pnpm install
 pnpm run build
 # Output will be in ../backend/internal/web/dist/
 
-# 4. Build backend with embedded frontend
+# 5. Build backend with embedded frontend
 cd ../backend
 go build -tags embed -o hermes-proxy ./cmd/server
 
-# 5. Create configuration file
+# 6. Create configuration file
 cp ../deploy/config.example.yaml ./config.yaml
 
-# 6. Edit configuration
+# 7. Edit configuration
 nano config.yaml
 ```
+
+> **Redis note:** If you start Redis manually, do not launch it from the repository root with the default persistence settings. Use `python3 tools/start_local_redis.py --daemonize` or pass an explicit `--dir` so `dump.rdb` and AOF files stay under `.hermes-proxy-runtime/redis/` instead of the repo root.
 
 > **Note:** The `-tags embed` flag embeds the frontend into the binary. Without this flag, the binary will not serve the frontend UI.
 
