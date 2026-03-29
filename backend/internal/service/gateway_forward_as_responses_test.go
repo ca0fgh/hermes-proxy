@@ -92,3 +92,25 @@ func TestHandleResponsesStreamingResponse_PreservesMessageStartCacheUsage(t *tes
 	require.Equal(t, 4, result.Usage.CacheCreationInputTokens)
 	require.Contains(t, rec.Body.String(), `response.completed`)
 }
+
+func TestForwardAsResponses_RejectsOpenAIAccounts(t *testing.T) {
+	t.Parallel()
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", strings.NewReader(`{"model":"gpt-5","stream":false}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	svc := &GatewayService{}
+	account := &Account{
+		ID:       42,
+		Platform: PlatformOpenAI,
+		Type:     AccountTypeAPIKey,
+	}
+
+	result, err := svc.ForwardAsResponses(c.Request.Context(), c, account, []byte(`{"model":"gpt-5","stream":false}`), nil)
+	require.Nil(t, result)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "openai accounts are not supported by GatewayService.ForwardAsResponses")
+}

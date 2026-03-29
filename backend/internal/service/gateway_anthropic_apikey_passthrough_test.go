@@ -22,10 +22,11 @@ import (
 )
 
 type anthropicHTTPUpstreamRecorder struct {
-	lastReq  *http.Request
-	lastBody []byte
-	resp     *http.Response
-	err      error
+	lastReq      *http.Request
+	lastBody     []byte
+	lastProxyURL string
+	resp         *http.Response
+	err          error
 }
 
 func newAnthropicAPIKeyAccountForTest() *Account {
@@ -49,6 +50,7 @@ func newAnthropicAPIKeyAccountForTest() *Account {
 
 func (u *anthropicHTTPUpstreamRecorder) Do(req *http.Request, proxyURL string, accountID int64, accountConcurrency int) (*http.Response, error) {
 	u.lastReq = req
+	u.lastProxyURL = proxyURL
 	if req != nil && req.Body != nil {
 		b, _ := io.ReadAll(req.Body)
 		u.lastBody = b
@@ -874,6 +876,37 @@ func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardDirect_NonStreamingSuc
 	require.Equal(t, 5, result.Usage.CacheCreationInputTokens)
 	require.Equal(t, 4, result.Usage.CacheReadInputTokens)
 	require.Equal(t, upstreamJSON, rec.Body.String())
+}
+
+func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardDirect_UsesConfiguredProxy(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+
+	body := []byte(`{"model":"claude-3-5-sonnet-latest","messages":[{"role":"user","content":[{"type":"text","text":"hello"}]}]}`)
+	upstream := &anthropicHTTPUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(`{"id":"msg_1","type":"message","usage":{"input_tokens":1,"output_tokens":1}}`)),
+		},
+	}
+	svc := &GatewayService{
+		cfg:              &config.Config{},
+		httpUpstream:     upstream,
+		rateLimitService: &RateLimitService{},
+	}
+
+	account := newAnthropicAPIKeyAccountForTest()
+	proxyID := int64(11)
+	account.ProxyID = &proxyID
+	account.Proxy = &Proxy{ID: proxyID, Protocol: "http", Host: "127.0.0.1", Port: 18080, Username: "u", Password: "p"}
+
+	result, err := svc.forwardAnthropicAPIKeyPassthrough(context.Background(), c, account, body, "claude-3-5-sonnet-latest", "claude-3-5-sonnet-latest", false, time.Now())
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, account.Proxy.URL(), upstream.lastProxyURL)
 }
 
 func TestGatewayService_AnthropicAPIKeyPassthrough_ForwardDirect_InvalidTokenType(t *testing.T) {
