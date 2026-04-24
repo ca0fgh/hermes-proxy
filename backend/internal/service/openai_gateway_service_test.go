@@ -18,6 +18,7 @@ import (
 	"github.com/cespare/xxhash/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 )
 
 // 编译期接口断言
@@ -235,6 +236,60 @@ func TestOpenAIGatewayService_GenerateSessionHashWithFallback(t *testing.T) {
 
 	empty := svc.GenerateSessionHashWithFallback(c, []byte(`{}`), "   ")
 	require.Equal(t, "", empty)
+}
+
+func TestOpenAIGatewayService_GenerateSessionHash_ContentFallback(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/openai/v1/chat/completions", nil)
+
+	svc := &OpenAIGatewayService{}
+
+	body := []byte(`{"model":"gpt-5.4","messages":[{"role":"system","content":"You are helpful."},{"role":"user","content":"Hello"}]}`)
+
+	hash := svc.GenerateSessionHash(c, body)
+	require.NotEmpty(t, hash, "content-based fallback should produce a hash")
+
+	hash2 := svc.GenerateSessionHash(c, body)
+	require.Equal(t, hash, hash2, "same content should produce same hash")
+
+	bodyExtended := []byte(`{"model":"gpt-5.4","messages":[{"role":"system","content":"You are helpful."},{"role":"user","content":"Hello"},{"role":"assistant","content":"Hi!"},{"role":"user","content":"How are you?"}]}`)
+	hashExtended := svc.GenerateSessionHash(c, bodyExtended)
+	require.Equal(t, hash, hashExtended, "hash should be stable across later turns")
+
+	bodyDifferent := []byte(`{"model":"gpt-5.4","messages":[{"role":"user","content":"Different question"}]}`)
+	hashDifferent := svc.GenerateSessionHash(c, bodyDifferent)
+	require.NotEqual(t, hash, hashDifferent, "different content should produce different hash")
+}
+
+func TestOpenAIGatewayService_GenerateSessionHash_ExplicitSignalWinsOverContent(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/openai/v1/chat/completions", nil)
+
+	svc := &OpenAIGatewayService{}
+	body := []byte(`{"model":"gpt-5.4","messages":[{"role":"user","content":"Hello"}]}`)
+
+	contentHash := svc.GenerateSessionHash(c, body)
+	require.NotEmpty(t, contentHash)
+
+	c.Request.Header.Set("session_id", "explicit-session")
+	explicitHash := svc.GenerateSessionHash(c, body)
+	require.NotEmpty(t, explicitHash)
+	require.NotEqual(t, contentHash, explicitHash, "explicit session_id should override content fallback")
+}
+
+func TestOpenAIGatewayService_GenerateSessionHash_EmptyBodyStillEmpty(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/openai/v1/chat/completions", nil)
+
+	svc := &OpenAIGatewayService{}
+	require.Empty(t, svc.GenerateSessionHash(c, []byte(`{}`)))
+	require.Empty(t, svc.GenerateSessionHash(c, nil))
 }
 
 func (c stubConcurrencyCache) GetAccountWaitingCount(ctx context.Context, accountID int64) (int, error) {
@@ -1797,7 +1852,7 @@ func TestExtractCodexFinalResponse_SampleReplay(t *testing.T) {
 	require.Contains(t, string(finalResp), `"input_tokens":11`)
 }
 
-func TestHandleOAuthSSEToJSON_CompletedEventReturnsJSON(t *testing.T) {
+func TestHandleSSEToJSON_CompletedEventReturnsJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
@@ -1814,7 +1869,7 @@ func TestHandleOAuthSSEToJSON_CompletedEventReturnsJSON(t *testing.T) {
 		`data: [DONE]`,
 	}, "\n"))
 
-	usage, err := svc.handleOAuthSSEToJSON(resp, c, body, "gpt-4o", "gpt-4o")
+	usage, err := svc.handleSSEToJSON(resp, c, body, "gpt-4o", "gpt-4o")
 	require.NoError(t, err)
 	require.NotNil(t, usage)
 	require.Equal(t, 7, usage.InputTokens)
@@ -1826,7 +1881,34 @@ func TestHandleOAuthSSEToJSON_CompletedEventReturnsJSON(t *testing.T) {
 	require.NotContains(t, rec.Body.String(), "data:")
 }
 
-func TestHandleOAuthSSEToJSON_NoFinalResponseKeepsSSEBody(t *testing.T) {
+func TestHandleSSEToJSON_ReconstructsImageGenerationOutputItemDone(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+
+	svc := &OpenAIGatewayService{cfg: &config.Config{}}
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+	}
+	body := []byte(strings.Join([]string{
+		`data: {"type":"response.output_item.done","item":{"id":"ig_123","type":"image_generation_call","result":"aGVsbG8=","revised_prompt":"draw a cat","output_format":"png"}}`,
+		`data: {"type":"response.completed","response":{"id":"resp_img","model":"gpt-5.4","output":[],"usage":{"input_tokens":7,"output_tokens":9,"output_tokens_details":{"image_tokens":4}}}}`,
+		`data: [DONE]`,
+	}, "\n"))
+
+	usage, err := svc.handleSSEToJSON(resp, c, body, "gpt-5.4", "gpt-5.4")
+	require.NoError(t, err)
+	require.NotNil(t, usage)
+	require.Equal(t, 4, usage.ImageOutputTokens)
+	require.NotContains(t, rec.Body.String(), "data:")
+	require.Equal(t, "image_generation_call", gjson.Get(rec.Body.String(), "output.0.type").String())
+	require.Equal(t, "aGVsbG8=", gjson.Get(rec.Body.String(), "output.0.result").String())
+	require.Equal(t, "draw a cat", gjson.Get(rec.Body.String(), "output.0.revised_prompt").String())
+}
+
+func TestHandleSSEToJSON_NoFinalResponseKeepsSSEBody(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
@@ -1842,7 +1924,7 @@ func TestHandleOAuthSSEToJSON_NoFinalResponseKeepsSSEBody(t *testing.T) {
 		`data: [DONE]`,
 	}, "\n"))
 
-	usage, err := svc.handleOAuthSSEToJSON(resp, c, body, "gpt-4o", "gpt-4o")
+	usage, err := svc.handleSSEToJSON(resp, c, body, "gpt-4o", "gpt-4o")
 	require.NoError(t, err)
 	require.NotNil(t, usage)
 	require.Equal(t, 0, usage.InputTokens)
@@ -1850,7 +1932,7 @@ func TestHandleOAuthSSEToJSON_NoFinalResponseKeepsSSEBody(t *testing.T) {
 	require.Contains(t, rec.Body.String(), `data: {"type":"response.in_progress"`)
 }
 
-func TestHandleOAuthSSEToJSON_ResponseFailedReturnsProtocolError(t *testing.T) {
+func TestHandleSSEToJSON_ResponseFailedReturnsProtocolError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
@@ -1866,7 +1948,7 @@ func TestHandleOAuthSSEToJSON_ResponseFailedReturnsProtocolError(t *testing.T) {
 		`data: [DONE]`,
 	}, "\n"))
 
-	usage, err := svc.handleOAuthSSEToJSON(resp, c, body, "gpt-4o", "gpt-4o")
+	usage, err := svc.handleSSEToJSON(resp, c, body, "gpt-4o", "gpt-4o")
 	require.Nil(t, usage)
 	require.Error(t, err)
 	require.Equal(t, http.StatusBadGateway, rec.Code)

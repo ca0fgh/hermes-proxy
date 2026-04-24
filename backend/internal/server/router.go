@@ -111,7 +111,7 @@ func registerRoutes(
 	// 注册各模块路由
 	routes.RegisterAuthRoutes(v1, h, jwtAuth, redisClient, settingService)
 	routes.RegisterUserRoutes(v1, h, jwtAuth, settingService)
-	routes.RegisterSoraClientRoutes(v1, h, jwtAuth, settingService)
 	routes.RegisterAdminRoutes(v1, h, adminAuth)
 	routes.RegisterGatewayRoutes(r, h, apiKeyAuth, auditService, apiKeyService, subscriptionService, opsService, settingService, cfg)
+	routes.RegisterPaymentRoutes(v1, h.Payment, h.PaymentWebhook, h.Admin.Payment, jwtAuth, adminAuth, settingService)
 }

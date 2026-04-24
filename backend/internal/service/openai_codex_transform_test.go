@@ -217,6 +217,195 @@ func TestApplyCodexOAuthTransform_NormalizeCodexTools_PreservesResponsesFunction
 	require.Equal(t, "bash", first["name"])
 }
 
+func TestNormalizeOpenAIResponsesImageGenerationTools_RewritesLegacyFields(t *testing.T) {
+	reqBody := map[string]any{
+		"tools": []any{
+			map[string]any{
+				"type":        "image_generation",
+				"format":      "png",
+				"compression": 60,
+			},
+		},
+	}
+
+	modified := normalizeOpenAIResponsesImageGenerationTools(reqBody)
+	require.True(t, modified)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	first, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "png", first["output_format"])
+	require.Equal(t, 60, first["output_compression"])
+	_, hasFormat := first["format"]
+	require.False(t, hasFormat)
+	_, hasCompression := first["compression"]
+	require.False(t, hasCompression)
+}
+
+func TestEnsureOpenAIResponsesImageGenerationTool_NoTools(t *testing.T) {
+	reqBody := map[string]any{
+		"model": "gpt-5.4",
+		"input": "draw a cat",
+	}
+
+	modified := ensureOpenAIResponsesImageGenerationTool(reqBody)
+	require.True(t, modified)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	require.Len(t, tools, 1)
+	tool, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "image_generation", tool["type"])
+	require.Equal(t, "png", tool["output_format"])
+}
+
+func TestEnsureOpenAIResponsesImageGenerationTool_AppendsToExistingTools(t *testing.T) {
+	reqBody := map[string]any{
+		"model": "gpt-5.4",
+		"tools": []any{
+			map[string]any{"type": "web_search"},
+		},
+	}
+
+	modified := ensureOpenAIResponsesImageGenerationTool(reqBody)
+	require.True(t, modified)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	require.Len(t, tools, 2)
+	first, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "web_search", first["type"])
+	second, ok := tools[1].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "image_generation", second["type"])
+	require.Equal(t, "png", second["output_format"])
+}
+
+func TestEnsureOpenAIResponsesImageGenerationTool_PreservesExistingImageTool(t *testing.T) {
+	reqBody := map[string]any{
+		"model": "gpt-5.4",
+		"tools": []any{
+			map[string]any{"type": "image_generation", "output_format": "webp"},
+			map[string]any{"type": "web_search"},
+		},
+	}
+
+	modified := ensureOpenAIResponsesImageGenerationTool(reqBody)
+	require.False(t, modified)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	require.Len(t, tools, 2)
+	tool, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "webp", tool["output_format"])
+}
+
+func TestApplyCodexImageGenerationBridgeInstructions_AppendsBridgeOnce(t *testing.T) {
+	reqBody := map[string]any{
+		"instructions": "existing instructions",
+		"tools": []any{
+			map[string]any{"type": "image_generation", "output_format": "png"},
+		},
+	}
+
+	modified := applyCodexImageGenerationBridgeInstructions(reqBody)
+	require.True(t, modified)
+
+	instructions, ok := reqBody["instructions"].(string)
+	require.True(t, ok)
+	require.Contains(t, instructions, "existing instructions")
+	require.Contains(t, instructions, codexImageGenerationBridgeMarker)
+	require.Contains(t, instructions, "Responses native `image_generation` tool")
+
+	modified = applyCodexImageGenerationBridgeInstructions(reqBody)
+	require.False(t, modified)
+}
+
+func TestApplyCodexImageGenerationBridgeInstructions_SkipsWithoutImageTool(t *testing.T) {
+	reqBody := map[string]any{
+		"instructions": "existing instructions",
+		"tools": []any{
+			map[string]any{"type": "web_search"},
+		},
+	}
+
+	modified := applyCodexImageGenerationBridgeInstructions(reqBody)
+	require.False(t, modified)
+	require.Equal(t, "existing instructions", reqBody["instructions"])
+}
+
+func TestNormalizeOpenAIResponsesImageOnlyModel_BuildsImageToolRequest(t *testing.T) {
+	reqBody := map[string]any{
+		"model":         "gpt-image-2",
+		"prompt":        "draw a cat",
+		"size":          "1024x1024",
+		"output_format": "png",
+	}
+
+	modified := normalizeOpenAIResponsesImageOnlyModel(reqBody)
+	require.True(t, modified)
+	require.Equal(t, openAIImagesResponsesMainModel, reqBody["model"])
+	require.Equal(t, "draw a cat", reqBody["input"])
+	_, hasPrompt := reqBody["prompt"]
+	require.False(t, hasPrompt)
+	_, hasTopLevelSize := reqBody["size"]
+	require.False(t, hasTopLevelSize)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	require.Len(t, tools, 1)
+	tool, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "image_generation", tool["type"])
+	require.Equal(t, "gpt-image-2", tool["model"])
+	require.Equal(t, "1024x1024", tool["size"])
+	require.Equal(t, "png", tool["output_format"])
+
+	choice, ok := reqBody["tool_choice"].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "image_generation", choice["type"])
+}
+
+func TestNormalizeOpenAIResponsesImageOnlyModel_PreservesExistingImageTool(t *testing.T) {
+	reqBody := map[string]any{
+		"model": "gpt-image-2",
+		"input": "draw a cat",
+		"tools": []any{
+			map[string]any{
+				"type":  "image_generation",
+				"model": "gpt-image-1.5",
+			},
+		},
+		"tool_choice": "auto",
+	}
+
+	modified := normalizeOpenAIResponsesImageOnlyModel(reqBody)
+	require.True(t, modified)
+	require.Equal(t, openAIImagesResponsesMainModel, reqBody["model"])
+	require.Equal(t, "auto", reqBody["tool_choice"])
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	require.Len(t, tools, 1)
+	tool, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "gpt-image-1.5", tool["model"])
+}
+
+func TestValidateOpenAIResponsesImageModel_RejectsImageOnlyModel(t *testing.T) {
+	err := validateOpenAIResponsesImageModel(map[string]any{
+		"tools": []any{
+			map[string]any{"type": "image_generation"},
+		},
+	}, "gpt-image-2")
+
+	require.ErrorContains(t, err, `/v1/responses image_generation requests require a Responses-capable text model`)
+}
+
 func TestApplyCodexOAuthTransform_EmptyInput(t *testing.T) {
 	// 空 input 应保持为空且不触发异常。
 
@@ -240,20 +429,67 @@ func TestNormalizeCodexModel_Gpt53(t *testing.T) {
 		"gpt 5.4":                   "gpt-5.4",
 		"gpt-5.4-mini":              "gpt-5.4-mini",
 		"gpt 5.4 mini":              "gpt-5.4-mini",
-		"gpt-5.4-nano":              "gpt-5.4-nano",
-		"gpt 5.4 nano":              "gpt-5.4-nano",
 		"gpt-5.3":                   "gpt-5.3-codex",
 		"gpt-5.3-codex":             "gpt-5.3-codex",
 		"gpt-5.3-codex-xhigh":       "gpt-5.3-codex",
-		"gpt-5.3-codex-spark":       "gpt-5.3-codex",
-		"gpt-5.3-codex-spark-high":  "gpt-5.3-codex",
-		"gpt-5.3-codex-spark-xhigh": "gpt-5.3-codex",
+		"gpt-5.3-codex-spark":       "gpt-5.3-codex-spark",
+		"gpt 5.3 codex spark":       "gpt-5.3-codex-spark",
+		"gpt-5.3-codex-spark-high":  "gpt-5.3-codex-spark",
+		"gpt-5.3-codex-spark-xhigh": "gpt-5.3-codex-spark",
 		"gpt 5.3 codex":             "gpt-5.3-codex",
 	}
 
 	for input, expected := range cases {
 		require.Equal(t, expected, normalizeCodexModel(input))
 	}
+}
+
+func TestNormalizeCodexModel_RemovedModelsFallbackToSupportedTargets(t *testing.T) {
+	cases := map[string]string{
+		"":                   "gpt-5.4",
+		"gpt-5":              "gpt-5.4",
+		"gpt-5-mini":         "gpt-5.4",
+		"gpt-5-nano":         "gpt-5.4",
+		"gpt-5.1":            "gpt-5.4",
+		"gpt-5.1-codex":      "gpt-5.3-codex",
+		"gpt-5.1-codex-max":  "gpt-5.3-codex",
+		"gpt-5.1-codex-mini": "gpt-5.3-codex",
+		"gpt-5.2-codex":      "gpt-5.2",
+		"codex-mini-latest":  "gpt-5.3-codex",
+		"gpt-5-codex":        "gpt-5.3-codex",
+	}
+
+	for input, expected := range cases {
+		require.Equal(t, expected, normalizeCodexModel(input))
+	}
+}
+
+func TestApplyCodexOAuthTransform_PreservesBareSparkModel(t *testing.T) {
+	reqBody := map[string]any{
+		"model": "gpt-5.3-codex-spark",
+		"input": []any{},
+	}
+
+	result := applyCodexOAuthTransform(reqBody, false, false)
+
+	require.Equal(t, "gpt-5.3-codex-spark", reqBody["model"])
+	require.Equal(t, "gpt-5.3-codex-spark", result.NormalizedModel)
+	store, ok := reqBody["store"].(bool)
+	require.True(t, ok)
+	require.False(t, store)
+}
+
+func TestApplyCodexOAuthTransform_TrimmedModelWithoutPolicyRewrite(t *testing.T) {
+	reqBody := map[string]any{
+		"model": "  gpt-5.3-codex-spark  ",
+		"input": []any{},
+	}
+
+	result := applyCodexOAuthTransform(reqBody, false, false)
+
+	require.Equal(t, "gpt-5.3-codex-spark", reqBody["model"])
+	require.Equal(t, "gpt-5.3-codex-spark", result.NormalizedModel)
+	require.True(t, result.Modified)
 }
 
 func TestApplyCodexOAuthTransform_CodexCLI_PreservesExistingInstructions(t *testing.T) {
@@ -450,6 +686,26 @@ func TestExtractSystemMessagesFromInput(t *testing.T) {
 		require.True(t, result)
 		require.Equal(t, "Extracted.\n\nExisting instructions.", reqBody["instructions"])
 	})
+}
+
+// TestApplyCodexOAuthTransform_StripsPromptCacheRetention is a regression
+// test: some clients (e.g. Cursor cloud via the Responses-shape compat path)
+// send prompt_cache_retention, but the ChatGPT internal Codex endpoint
+// rejects it with "Unsupported parameter: prompt_cache_retention".
+func TestApplyCodexOAuthTransform_StripsPromptCacheRetention(t *testing.T) {
+	reqBody := map[string]any{
+		"model":                  "gpt-5.1",
+		"prompt_cache_retention": "24h",
+		"input": []any{
+			map[string]any{"role": "user", "content": "hi"},
+		},
+	}
+
+	applyCodexOAuthTransform(reqBody, false, false)
+
+	_, stillThere := reqBody["prompt_cache_retention"]
+	require.False(t, stillThere,
+		"prompt_cache_retention must be stripped before forwarding to Codex upstream")
 }
 
 func TestApplyCodexOAuthTransform_ExtractsSystemMessages(t *testing.T) {

@@ -10,8 +10,14 @@ import (
 )
 
 func TestInit_DualOutput(t *testing.T) {
-	tmpDir := t.TempDir()
-	logPath := filepath.Join(tmpDir, "logs", "hermes-proxy.log")
+	// Use os.MkdirTemp instead of t.TempDir to avoid cleanup failures
+	// when lumberjack holds file handles on Windows.
+	tmpDir, err := os.MkdirTemp("", "logger-test-*")
+	if err != nil {
+		t.Fatalf("create temp dir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(tmpDir) })
+	logPath := filepath.Join(tmpDir, "logs", "sub2api.log")
 
 	origStdout := os.Stdout
 	origStderr := os.Stderr
@@ -37,7 +43,7 @@ func TestInit_DualOutput(t *testing.T) {
 	err = Init(InitOptions{
 		Level:       "debug",
 		Format:      "json",
-		ServiceName: "hermes-proxy",
+		ServiceName: "sub2api",
 		Environment: "test",
 		Output: OutputOptions{
 			ToStdout: true,
@@ -57,7 +63,9 @@ func TestInit_DualOutput(t *testing.T) {
 
 	L().Info("dual-output-info")
 	L().Warn("dual-output-warn")
-	Sync()
+
+	// Skip Sync() — on Windows, fsync on pipes deadlocks (FlushFileBuffers).
+	// The log data is already in the pipe buffer; closing writers is sufficient.
 
 	_ = stdoutW.Close()
 	_ = stderrW.Close()
@@ -110,7 +118,7 @@ func TestInit_FileOutputFailureDowngrade(t *testing.T) {
 		Output: OutputOptions{
 			ToStdout: true,
 			ToFile:   true,
-			FilePath: filepath.Join(os.DevNull, "logs", "hermes-proxy.log"),
+			FilePath: filepath.Join(os.DevNull, "logs", "sub2api.log"),
 		},
 		Rotation: RotationOptions{
 			MaxSizeMB:  10,
@@ -153,7 +161,7 @@ func TestInit_CallerShouldPointToCallsite(t *testing.T) {
 	if err := Init(InitOptions{
 		Level:       "info",
 		Format:      "json",
-		ServiceName: "hermes-proxy",
+		ServiceName: "sub2api",
 		Environment: "test",
 		Caller:      true,
 		Output: OutputOptions{
@@ -166,7 +174,9 @@ func TestInit_CallerShouldPointToCallsite(t *testing.T) {
 	}
 
 	L().Info("caller-check")
-	Sync()
+	// Skip Sync() — on Windows, fsync on pipes deadlocks (FlushFileBuffers).
+	os.Stdout = origStdout
+	os.Stderr = origStderr
 	_ = stdoutW.Close()
 	logBytes, _ := io.ReadAll(stdoutR)
 

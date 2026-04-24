@@ -845,7 +845,7 @@ func (c *SoraSDKClient) recoverAccessToken(ctx context.Context, account *Account
 	// 尝试多个 client_id
 	clientIDs := []string{
 		strings.TrimSpace(account.GetCredential("client_id")),
-		openaioauth.SoraClientID,
+		openaioauth.ClientID,
 		openaioauth.ClientID,
 	}
 	tried := make(map[string]struct{}, len(clientIDs))

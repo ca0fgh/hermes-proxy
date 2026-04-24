@@ -45,7 +45,7 @@ var soraBlockedHostnames = map[string]struct{}{
 	"metadata.google.internal.": {},
 }
 
-var soraBlockedCIDRs = mustParseCIDRs([]string{
+var soraBlockedCIDRs = mustParseSoraCIDRs([]string{
 	"0.0.0.0/8",
 	"10.0.0.0/8",
 	"100.64.0.0/10",
@@ -1546,7 +1546,7 @@ func isSoraBlockedIP(ip net.IP) bool {
 	return false
 }
 
-func mustParseCIDRs(values []string) []*net.IPNet {
+func mustParseSoraCIDRs(values []string) []*net.IPNet {
 	out := make([]*net.IPNet, 0, len(values))
 	for _, val := range values {
 		_, cidr, err := net.ParseCIDR(val)

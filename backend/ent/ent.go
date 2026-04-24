@@ -17,15 +17,27 @@ import (
 	"github.com/ca0fgh/hermes-proxy/ent/announcement"
 	"github.com/ca0fgh/hermes-proxy/ent/announcementread"
 	"github.com/ca0fgh/hermes-proxy/ent/apikey"
+	"github.com/ca0fgh/hermes-proxy/ent/authidentity"
+	"github.com/ca0fgh/hermes-proxy/ent/authidentitychannel"
+	"github.com/ca0fgh/hermes-proxy/ent/channelmonitor"
+	"github.com/ca0fgh/hermes-proxy/ent/channelmonitordailyrollup"
+	"github.com/ca0fgh/hermes-proxy/ent/channelmonitorhistory"
+	"github.com/ca0fgh/hermes-proxy/ent/channelmonitorrequesttemplate"
 	"github.com/ca0fgh/hermes-proxy/ent/errorpassthroughrule"
 	"github.com/ca0fgh/hermes-proxy/ent/group"
 	"github.com/ca0fgh/hermes-proxy/ent/idempotencyrecord"
+	"github.com/ca0fgh/hermes-proxy/ent/identityadoptiondecision"
+	"github.com/ca0fgh/hermes-proxy/ent/paymentauditlog"
+	"github.com/ca0fgh/hermes-proxy/ent/paymentorder"
+	"github.com/ca0fgh/hermes-proxy/ent/paymentproviderinstance"
+	"github.com/ca0fgh/hermes-proxy/ent/pendingauthsession"
 	"github.com/ca0fgh/hermes-proxy/ent/promocode"
 	"github.com/ca0fgh/hermes-proxy/ent/promocodeusage"
 	"github.com/ca0fgh/hermes-proxy/ent/proxy"
 	"github.com/ca0fgh/hermes-proxy/ent/redeemcode"
 	"github.com/ca0fgh/hermes-proxy/ent/securitysecret"
 	"github.com/ca0fgh/hermes-proxy/ent/setting"
+	"github.com/ca0fgh/hermes-proxy/ent/subscriptionplan"
 	"github.com/ca0fgh/hermes-proxy/ent/tlsfingerprintprofile"
 	"github.com/ca0fgh/hermes-proxy/ent/usagecleanuptask"
 	"github.com/ca0fgh/hermes-proxy/ent/usagelog"
@@ -94,28 +106,40 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			apikey.Table:                  apikey.ValidColumn,
-			account.Table:                 account.ValidColumn,
-			accountgroup.Table:            accountgroup.ValidColumn,
-			announcement.Table:            announcement.ValidColumn,
-			announcementread.Table:        announcementread.ValidColumn,
-			errorpassthroughrule.Table:    errorpassthroughrule.ValidColumn,
-			group.Table:                   group.ValidColumn,
-			idempotencyrecord.Table:       idempotencyrecord.ValidColumn,
-			promocode.Table:               promocode.ValidColumn,
-			promocodeusage.Table:          promocodeusage.ValidColumn,
-			proxy.Table:                   proxy.ValidColumn,
-			redeemcode.Table:              redeemcode.ValidColumn,
-			securitysecret.Table:          securitysecret.ValidColumn,
-			setting.Table:                 setting.ValidColumn,
-			tlsfingerprintprofile.Table:   tlsfingerprintprofile.ValidColumn,
-			usagecleanuptask.Table:        usagecleanuptask.ValidColumn,
-			usagelog.Table:                usagelog.ValidColumn,
-			user.Table:                    user.ValidColumn,
-			userallowedgroup.Table:        userallowedgroup.ValidColumn,
-			userattributedefinition.Table: userattributedefinition.ValidColumn,
-			userattributevalue.Table:      userattributevalue.ValidColumn,
-			usersubscription.Table:        usersubscription.ValidColumn,
+			apikey.Table:                        apikey.ValidColumn,
+			account.Table:                       account.ValidColumn,
+			accountgroup.Table:                  accountgroup.ValidColumn,
+			announcement.Table:                  announcement.ValidColumn,
+			announcementread.Table:              announcementread.ValidColumn,
+			authidentity.Table:                  authidentity.ValidColumn,
+			authidentitychannel.Table:           authidentitychannel.ValidColumn,
+			channelmonitor.Table:                channelmonitor.ValidColumn,
+			channelmonitordailyrollup.Table:     channelmonitordailyrollup.ValidColumn,
+			channelmonitorhistory.Table:         channelmonitorhistory.ValidColumn,
+			channelmonitorrequesttemplate.Table: channelmonitorrequesttemplate.ValidColumn,
+			errorpassthroughrule.Table:          errorpassthroughrule.ValidColumn,
+			group.Table:                         group.ValidColumn,
+			idempotencyrecord.Table:             idempotencyrecord.ValidColumn,
+			identityadoptiondecision.Table:      identityadoptiondecision.ValidColumn,
+			paymentauditlog.Table:               paymentauditlog.ValidColumn,
+			paymentorder.Table:                  paymentorder.ValidColumn,
+			paymentproviderinstance.Table:       paymentproviderinstance.ValidColumn,
+			pendingauthsession.Table:            pendingauthsession.ValidColumn,
+			promocode.Table:                     promocode.ValidColumn,
+			promocodeusage.Table:                promocodeusage.ValidColumn,
+			proxy.Table:                         proxy.ValidColumn,
+			redeemcode.Table:                    redeemcode.ValidColumn,
+			securitysecret.Table:                securitysecret.ValidColumn,
+			setting.Table:                       setting.ValidColumn,
+			subscriptionplan.Table:              subscriptionplan.ValidColumn,
+			tlsfingerprintprofile.Table:         tlsfingerprintprofile.ValidColumn,
+			usagecleanuptask.Table:              usagecleanuptask.ValidColumn,
+			usagelog.Table:                      usagelog.ValidColumn,
+			user.Table:                          user.ValidColumn,
+			userallowedgroup.Table:              userallowedgroup.ValidColumn,
+			userattributedefinition.Table:       userattributedefinition.ValidColumn,
+			userattributevalue.Table:            userattributevalue.ValidColumn,
+			usersubscription.Table:              usersubscription.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

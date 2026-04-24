@@ -21,7 +21,7 @@ import (
 	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
 	middleware2 "github.com/ca0fgh/hermes-proxy/internal/server/middleware"
 	"github.com/ca0fgh/hermes-proxy/internal/service"
-	"github.com/ca0fgh/hermes-proxy/internal/util/soraerror"
+	utilhttputil "github.com/ca0fgh/hermes-proxy/internal/util/httputil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
@@ -211,7 +211,7 @@ func (h *SoraGatewayHandler) ChatCompletions(c *gin.Context) {
 
 	if err := h.billingCacheService.CheckBillingEligibility(c.Request.Context(), apiKey.User, apiKey, apiKey.Group, subscription); err != nil {
 		reqLog.Info("sora.billing_eligibility_check_failed", zap.Error(err))
-		status, code, message := billingErrorDetails(err)
+		status, code, message, _ := billingErrorDetails(err)
 		h.handleStreamingAwareError(c, status, code, message, streamStarted)
 		return
 	}
@@ -226,7 +226,7 @@ func (h *SoraGatewayHandler) ChatCompletions(c *gin.Context) {
 	var lastFailoverHeaders http.Header
 
 	for {
-		selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), apiKey.GroupID, sessionHash, reqModel, failedAccountIDs, "")
+		selection, err := h.gatewayService.SelectAccountWithLoadAwareness(c.Request.Context(), apiKey.GroupID, sessionHash, reqModel, failedAccountIDs, "", subject.UserID)
 		if err != nil {
 			reqLog.Warn("sora.account_select_failed",
 				zap.Error(err),
@@ -548,12 +548,12 @@ func extractSoraFailoverHeaderInsights(headers http.Header, body []byte) (rayID,
 			contentType = strings.TrimSpace(headers.Get("Content-Type"))
 		}
 	}
-	rayID = soraerror.ExtractCloudflareRayID(headers, body)
+	rayID = utilhttputil.ExtractCloudflareRayID(headers, body)
 	return rayID, mitigated, contentType
 }
 
 func isSoraCloudflareChallengeResponse(statusCode int, headers http.Header, body []byte) bool {
-	return soraerror.IsCloudflareChallengeResponse(statusCode, headers, body)
+	return utilhttputil.IsCloudflareChallengeResponse(statusCode, headers, body)
 }
 
 func shouldPassthroughSoraUpstreamMessage(statusCode int, message string) bool {
@@ -571,11 +571,11 @@ func shouldPassthroughSoraUpstreamMessage(statusCode int, message string) bool {
 }
 
 func formatSoraCloudflareChallengeMessage(base string, headers http.Header, body []byte) string {
-	return soraerror.FormatCloudflareChallengeMessage(base, headers, body)
+	return utilhttputil.FormatCloudflareChallengeMessage(base, headers, body)
 }
 
 func extractUpstreamErrorCodeAndMessage(body []byte) (string, string) {
-	return soraerror.ExtractUpstreamErrorCodeAndMessage(body)
+	return utilhttputil.ExtractUpstreamErrorCodeAndMessage(body)
 }
 
 func (h *SoraGatewayHandler) handleStreamingAwareError(c *gin.Context, status int, errType, message string, streamStarted bool) {
