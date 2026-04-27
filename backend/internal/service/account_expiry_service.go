@@ -16,6 +16,10 @@ type AccountExpiryService struct {
 	wg          sync.WaitGroup
 }
 
+type expiredQuotaPeriodResetter interface {
+	ResetExpiredQuotaPeriods(ctx context.Context) (int64, error)
+}
+
 func NewAccountExpiryService(accountRepo AccountRepository, interval time.Duration) *AccountExpiryService {
 	return &AccountExpiryService{
 		accountRepo: accountRepo,
@@ -67,5 +71,16 @@ func (s *AccountExpiryService) runOnce() {
 	}
 	if updated > 0 {
 		log.Printf("[AccountExpiry] Auto paused %d expired accounts", updated)
+	}
+
+	if resetter, ok := s.accountRepo.(expiredQuotaPeriodResetter); ok {
+		reset, err := resetter.ResetExpiredQuotaPeriods(ctx)
+		if err != nil {
+			log.Printf("[AccountExpiry] Reset expired quota periods failed: %v", err)
+			return
+		}
+		if reset > 0 {
+			log.Printf("[AccountExpiry] Reset expired quota periods for %d accounts", reset)
+		}
 	}
 }

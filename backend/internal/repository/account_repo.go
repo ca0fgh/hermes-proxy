@@ -2105,3 +2105,91 @@ func (r *accountRepository) ResetQuotaUsed(ctx context.Context, id int64) error 
 	}
 	return nil
 }
+
+// ResetExpiredQuotaPeriods materializes expired daily/weekly quota resets.
+//
+// IncrementQuotaUsed also repairs expired windows on the next request. This
+// background sweep handles idle accounts, so admin lists and scheduler snapshots
+// stop showing stale over-limit quota after the reset boundary has passed.
+func (r *accountRepository) ResetExpiredQuotaPeriods(ctx context.Context) (int64, error) {
+	var updated int64
+	var outboxRows int64
+	err := scanSingleRow(ctx, r.sql, `
+		WITH evaluated AS (
+			SELECT
+				id,
+				COALESCE(extra->>'quota_daily_reset_mode', 'rolling') = 'fixed' AS daily_fixed,
+				COALESCE(extra->>'quota_weekly_reset_mode', 'rolling') = 'fixed' AS weekly_fixed,
+				(
+					COALESCE((extra->>'quota_daily_limit')::numeric, 0) > 0
+					AND COALESCE((extra->>'quota_daily_used')::numeric, 0) > 0
+					AND `+dailyResetNeededExpr+`
+				) AS daily_reset,
+				(
+					COALESCE((extra->>'quota_weekly_limit')::numeric, 0) > 0
+					AND COALESCE((extra->>'quota_weekly_used')::numeric, 0) > 0
+					AND `+weeklyResetNeededExpr+`
+				) AS weekly_reset,
+				`+currentDailyWindowStartStrExpr+` AS daily_start,
+				`+currentWeeklyWindowStartStrExpr+` AS weekly_start,
+				`+nextDailyResetAtExpr+` AS daily_reset_at,
+				`+nextWeeklyResetAtExpr+` AS weekly_reset_at
+			FROM accounts
+			WHERE deleted_at IS NULL
+				AND type IN ('`+service.AccountTypeAPIKey+`', '`+service.AccountTypeBedrock+`')
+				AND (
+					(
+						COALESCE((extra->>'quota_daily_limit')::numeric, 0) > 0
+						AND COALESCE((extra->>'quota_daily_used')::numeric, 0) > 0
+					)
+					OR (
+						COALESCE((extra->>'quota_weekly_limit')::numeric, 0) > 0
+						AND COALESCE((extra->>'quota_weekly_used')::numeric, 0) > 0
+					)
+				)
+		),
+		expired AS (
+			SELECT *
+			FROM evaluated
+			WHERE daily_reset OR weekly_reset
+		),
+		updated AS (
+			UPDATE accounts AS a
+			SET extra = (
+					COALESCE(a.extra, '{}'::jsonb)
+					|| CASE WHEN e.daily_reset
+						THEN jsonb_build_object('quota_daily_used', 0)
+						ELSE '{}'::jsonb END
+					|| CASE WHEN e.daily_reset AND e.daily_fixed
+						THEN jsonb_build_object('quota_daily_start', e.daily_start, 'quota_daily_reset_at', e.daily_reset_at)
+						ELSE '{}'::jsonb END
+					|| CASE WHEN e.weekly_reset
+						THEN jsonb_build_object('quota_weekly_used', 0)
+						ELSE '{}'::jsonb END
+					|| CASE WHEN e.weekly_reset AND e.weekly_fixed
+						THEN jsonb_build_object('quota_weekly_start', e.weekly_start, 'quota_weekly_reset_at', e.weekly_reset_at)
+						ELSE '{}'::jsonb END
+				)
+				- CASE WHEN e.daily_reset AND NOT e.daily_fixed THEN 'quota_daily_start' ELSE '__noop__' END
+				- CASE WHEN e.daily_reset AND NOT e.daily_fixed THEN 'quota_daily_reset_at' ELSE '__noop__' END
+				- CASE WHEN e.weekly_reset AND NOT e.weekly_fixed THEN 'quota_weekly_start' ELSE '__noop__' END
+				- CASE WHEN e.weekly_reset AND NOT e.weekly_fixed THEN 'quota_weekly_reset_at' ELSE '__noop__' END,
+				updated_at = NOW()
+			FROM expired e
+			WHERE a.id = e.id
+			RETURNING a.id
+		),
+		outbox AS (
+			INSERT INTO scheduler_outbox (event_type, account_id)
+			SELECT $1, id FROM updated
+			RETURNING 1
+		)
+		SELECT
+			(SELECT COUNT(*) FROM updated),
+			(SELECT COUNT(*) FROM outbox)
+	`, []any{service.SchedulerOutboxEventAccountChanged}, &updated, &outboxRows)
+	if err != nil {
+		return 0, err
+	}
+	return updated, nil
+}

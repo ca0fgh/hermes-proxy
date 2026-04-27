@@ -354,10 +354,12 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 			tz := a.GetQuotaResetTimezone()
 			out.QuotaResetTimezone = &tz
 		}
-		if a.Extra != nil {
+		if a.Extra != nil && a.GetQuotaDailyResetMode() != "fixed" {
 			if v, ok := a.Extra["quota_daily_reset_at"].(string); ok && v != "" {
 				out.QuotaDailyResetAt = &v
 			}
+		}
+		if a.Extra != nil && a.GetQuotaWeeklyResetMode() != "fixed" {
 			if v, ok := a.Extra["quota_weekly_reset_at"].(string); ok && v != "" {
 				out.QuotaWeeklyResetAt = &v
 			}

@@ -142,6 +142,72 @@ func (s *AccountRepoSuite) TestUpdate_SyncSchedulerSnapshotOnDisabled() {
 	s.Require().Equal(service.StatusDisabled, cacheRecorder.setAccounts[0].Status)
 }
 
+func (s *AccountRepoSuite) TestResetExpiredQuotaPeriods_ClearsExpiredDailyQuotaAndEnqueuesOutbox() {
+	_, _ = s.repo.sql.ExecContext(s.ctx, "TRUNCATE scheduler_outbox")
+
+	now := time.Now().UTC().Truncate(time.Second)
+	expired := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:     "expired-fixed-daily-" + now.Format("150405.000000"),
+		Platform: service.PlatformOpenAI,
+		Type:     service.AccountTypeAPIKey,
+		Extra: map[string]any{
+			"quota_daily_limit":      120.0,
+			"quota_daily_used":       120.10,
+			"quota_daily_start":      now.Add(-48 * time.Hour).Format(time.RFC3339),
+			"quota_daily_reset_mode": "fixed",
+			"quota_daily_reset_hour": 0.0,
+			"quota_reset_timezone":   "UTC",
+			"quota_daily_reset_at":   now.Add(-time.Minute).Format(time.RFC3339),
+		},
+	})
+	fresh := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:     "fresh-fixed-daily-" + now.Format("150405.000000"),
+		Platform: service.PlatformOpenAI,
+		Type:     service.AccountTypeAPIKey,
+		Extra: map[string]any{
+			"quota_daily_limit":      120.0,
+			"quota_daily_used":       30.00,
+			"quota_daily_start":      now.Format(time.RFC3339),
+			"quota_daily_reset_mode": "fixed",
+			"quota_daily_reset_hour": 0.0,
+			"quota_reset_timezone":   "UTC",
+			"quota_daily_reset_at":   now.Add(time.Hour).Format(time.RFC3339),
+		},
+	})
+
+	updated, err := s.repo.ResetExpiredQuotaPeriods(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(int64(1), updated)
+
+	var expiredUsed float64
+	var expiredStart string
+	var expiredResetAt string
+	s.Require().NoError(scanSingleRow(s.ctx, s.repo.sql, `
+		SELECT
+			COALESCE((extra->>'quota_daily_used')::numeric, 0),
+			COALESCE(extra->>'quota_daily_start', ''),
+			COALESCE(extra->>'quota_daily_reset_at', '')
+		FROM accounts WHERE id = $1
+	`, []any{expired.ID}, &expiredUsed, &expiredStart, &expiredResetAt))
+	s.Require().Zero(expiredUsed)
+	s.Require().NotEmpty(expiredStart)
+	s.Require().NotEmpty(expiredResetAt)
+
+	var freshUsed float64
+	s.Require().NoError(scanSingleRow(s.ctx, s.repo.sql, `
+		SELECT COALESCE((extra->>'quota_daily_used')::numeric, 0)
+		FROM accounts WHERE id = $1
+	`, []any{fresh.ID}, &freshUsed))
+	s.Require().Equal(30.00, freshUsed)
+
+	var outboxCount int
+	s.Require().NoError(scanSingleRow(s.ctx, s.repo.sql, `
+		SELECT COUNT(*) FROM scheduler_outbox
+		WHERE event_type = $1 AND account_id = $2
+	`, []any{service.SchedulerOutboxEventAccountChanged, expired.ID}, &outboxCount))
+	s.Require().Equal(1, outboxCount)
+}
+
 func (s *AccountRepoSuite) TestUpdate_SyncSchedulerSnapshotOnCredentialsChange() {
 	account := mustCreateAccount(s.T(), s.client, &service.Account{
 		Name:        "sync-credentials-update",
