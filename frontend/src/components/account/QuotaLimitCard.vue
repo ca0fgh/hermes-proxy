@@ -73,6 +73,14 @@ watch(enabled, (val) => {
   localEnabled.value = val
 })
 
+watch(() => props.dailyLimit, (limit) => {
+  if (limit != null && limit > 0 && !props.dailyResetMode) {
+    emit('update:dailyResetMode', 'fixed')
+    if (props.dailyResetHour == null) emit('update:dailyResetHour', 0)
+    if (!props.resetTimezone) emit('update:resetTimezone', DEFAULT_QUOTA_RESET_TIMEZONE)
+  }
+}, { immediate: true })
+
 // When toggle is turned off, clear all values and expand
 watch(localEnabled, (val) => {
   if (!val) {

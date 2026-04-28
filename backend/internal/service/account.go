@@ -1674,9 +1674,15 @@ func (a *Account) getExtraInt(key string) int {
 	return 0
 }
 
-// GetQuotaDailyResetMode 获取日额度重置模式："rolling"（默认）或 "fixed"
+// GetQuotaDailyResetMode 获取日额度重置模式："fixed"（日限额默认）或 "rolling"（显式选择）
 func (a *Account) GetQuotaDailyResetMode() string {
-	if m := a.getExtraString("quota_daily_reset_mode"); m == "fixed" {
+	switch m := a.getExtraString("quota_daily_reset_mode"); m {
+	case "fixed":
+		return "fixed"
+	case "rolling":
+		return "rolling"
+	}
+	if a.GetQuotaDailyLimit() > 0 {
 		return "fixed"
 	}
 	return "rolling"
@@ -1903,12 +1909,16 @@ func ComputeQuotaResetAt(extra map[string]any) {
 		tz = time.UTC
 	}
 
-	// 日配额固定重置时间
-	if mode, _ := extra["quota_daily_reset_mode"].(string); mode == "fixed" {
+	// 日限额默认按自然日固定重置；只有显式 rolling 才使用滚动 24h。
+	dailyMode, _ := extra["quota_daily_reset_mode"].(string)
+	dailyFixed := dailyMode == "fixed" || (dailyMode == "" && parseExtraFloat64(extra["quota_daily_limit"]) > 0)
+	if dailyFixed {
+		extra["quota_daily_reset_mode"] = "fixed"
 		hour := int(parseExtraFloat64(extra["quota_daily_reset_hour"]))
 		if hour < 0 || hour > 23 {
 			hour = 0
 		}
+		extra["quota_daily_reset_hour"] = hour
 		resetAt := nextFixedDailyReset(hour, tz, now)
 		extra["quota_daily_reset_at"] = resetAt.UTC().Format(time.RFC3339)
 	} else {

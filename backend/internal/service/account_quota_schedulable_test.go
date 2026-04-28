@@ -11,6 +11,12 @@ import (
 
 func TestAccountIsSchedulable_QuotaExceeded(t *testing.T) {
 	now := time.Now()
+	tz, err := time.LoadLocation(DefaultQuotaResetTimezone)
+	require.NoError(t, err)
+	nowInTZ := now.In(tz)
+	lastDailyReset := time.Date(nowInTZ.Year(), nowInTZ.Month(), nowInTZ.Day(), 0, 0, 0, 0, tz)
+	currentDailyWindowStart := lastDailyReset.Add(time.Second).UTC().Format(time.RFC3339)
+	expiredDailyWindowStart := lastDailyReset.Add(-time.Second).UTC().Format(time.RFC3339)
 
 	tests := []struct {
 		name    string
@@ -26,7 +32,7 @@ func TestAccountIsSchedulable_QuotaExceeded(t *testing.T) {
 				Extra: map[string]any{
 					"quota_daily_limit": 10.0,
 					"quota_daily_used":  10.0,
-					"quota_daily_start": now.Add(-1 * time.Hour).Format(time.RFC3339),
+					"quota_daily_start": currentDailyWindowStart,
 				},
 			},
 			want: false,
@@ -67,7 +73,7 @@ func TestAccountIsSchedulable_QuotaExceeded(t *testing.T) {
 				Extra: map[string]any{
 					"quota_daily_limit": 10.0,
 					"quota_daily_used":  5.0,
-					"quota_daily_start": now.Add(-1 * time.Hour).Format(time.RFC3339),
+					"quota_daily_start": currentDailyWindowStart,
 				},
 			},
 			want: true,
@@ -81,7 +87,7 @@ func TestAccountIsSchedulable_QuotaExceeded(t *testing.T) {
 				Extra: map[string]any{
 					"quota_daily_limit": 10.0,
 					"quota_daily_used":  10.0,
-					"quota_daily_start": now.Add(-25 * time.Hour).Format(time.RFC3339),
+					"quota_daily_start": expiredDailyWindowStart,
 				},
 			},
 			want: true,

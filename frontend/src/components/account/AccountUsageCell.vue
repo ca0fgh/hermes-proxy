@@ -1061,8 +1061,8 @@ const makeQuotaBar = (
     const extra = props.account.extra as Record<string, unknown> | undefined
     const isDaily = startKey.includes('daily')
     const mode = isDaily
-      ? (extra?.quota_daily_reset_mode as string) || 'rolling'
-      : (extra?.quota_weekly_reset_mode as string) || 'rolling'
+      ? (extra?.quota_daily_reset_mode as string) || props.account.quota_daily_reset_mode || 'fixed'
+      : (extra?.quota_weekly_reset_mode as string) || props.account.quota_weekly_reset_mode || 'rolling'
 
     if (mode === 'fixed') {
       // Use pre-computed next reset time for fixed mode

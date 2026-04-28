@@ -2309,13 +2309,18 @@ const syncFormFromAccount = (newAccount: Account | null) => {
     editQuotaDailyLimit.value = (dailyVal && dailyVal > 0) ? dailyVal : null
     const weeklyVal = typeof extra?.quota_weekly_limit === 'number' ? extra.quota_weekly_limit : newAccount.quota_weekly_limit
     editQuotaWeeklyLimit.value = (weeklyVal && weeklyVal > 0) ? weeklyVal : null
-    // Load quota reset mode config
-    editDailyResetMode.value = (extra?.quota_daily_reset_mode as 'rolling' | 'fixed') || newAccount.quota_daily_reset_mode || null
+    // Daily quota defaults to fixed midnight reset for legacy accounts without an explicit mode.
+    const dailyResetMode = (extra?.quota_daily_reset_mode as 'rolling' | 'fixed') || newAccount.quota_daily_reset_mode || null
+    editDailyResetMode.value = dailyResetMode || (editQuotaDailyLimit.value != null && editQuotaDailyLimit.value > 0 ? 'fixed' : null)
     editDailyResetHour.value = (extra?.quota_daily_reset_hour as number | undefined) ?? newAccount.quota_daily_reset_hour ?? null
     editWeeklyResetMode.value = (extra?.quota_weekly_reset_mode as 'rolling' | 'fixed') || newAccount.quota_weekly_reset_mode || null
     editWeeklyResetDay.value = (extra?.quota_weekly_reset_day as number | undefined) ?? newAccount.quota_weekly_reset_day ?? null
     editWeeklyResetHour.value = (extra?.quota_weekly_reset_hour as number | undefined) ?? newAccount.quota_weekly_reset_hour ?? null
     editResetTimezone.value = (extra?.quota_reset_timezone as string) || newAccount.quota_reset_timezone || null
+    if (editDailyResetMode.value === 'fixed') {
+      editDailyResetHour.value = editDailyResetHour.value ?? 0
+      editResetTimezone.value = editResetTimezone.value || DEFAULT_QUOTA_RESET_TIMEZONE
+    }
     // Load quota notify config
     loadQuotaNotifyFromExtra(extra)
   } else {
@@ -3350,7 +3355,9 @@ const handleSubmit = async () => {
         delete newExtra.quota_limit
       }
       // Daily quota
-      if (editQuotaDailyLimit.value != null && editQuotaDailyLimit.value > 0) {
+      const dailyQuotaEnabled = editQuotaDailyLimit.value != null && editQuotaDailyLimit.value > 0
+      const dailyResetMode = editDailyResetMode.value || 'fixed'
+      if (dailyQuotaEnabled) {
         newExtra.quota_daily_limit = editQuotaDailyLimit.value
       } else {
         delete newExtra.quota_daily_limit
@@ -3365,10 +3372,14 @@ const handleSubmit = async () => {
         delete newExtra.quota_weekly_used
         delete newExtra.quota_weekly_start
       }
-      // Quota reset mode config
-      if (editDailyResetMode.value === 'fixed') {
-        newExtra.quota_daily_reset_mode = 'fixed'
-        newExtra.quota_daily_reset_hour = editDailyResetHour.value ?? 0
+      // Daily quota defaults to fixed midnight reset unless explicitly set to rolling.
+      if (dailyQuotaEnabled) {
+        newExtra.quota_daily_reset_mode = dailyResetMode
+        if (dailyResetMode === 'fixed') {
+          newExtra.quota_daily_reset_hour = editDailyResetHour.value ?? 0
+        } else {
+          delete newExtra.quota_daily_reset_hour
+        }
       } else {
         delete newExtra.quota_daily_reset_mode
         delete newExtra.quota_daily_reset_hour
@@ -3382,7 +3393,7 @@ const handleSubmit = async () => {
         delete newExtra.quota_weekly_reset_day
         delete newExtra.quota_weekly_reset_hour
       }
-      if (editDailyResetMode.value === 'fixed' || editWeeklyResetMode.value === 'fixed') {
+      if ((dailyQuotaEnabled && dailyResetMode === 'fixed') || editWeeklyResetMode.value === 'fixed') {
         newExtra.quota_reset_timezone = editResetTimezone.value || DEFAULT_QUOTA_RESET_TIMEZONE
       } else {
         delete newExtra.quota_reset_timezone

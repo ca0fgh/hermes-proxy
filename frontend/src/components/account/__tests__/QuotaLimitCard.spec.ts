@@ -13,6 +13,26 @@ vi.mock('vue-i18n', async () => {
 })
 
 describe('QuotaLimitCard', () => {
+  it('defaults daily limits to fixed reset mode', () => {
+    const wrapper = mount(QuotaLimitCard, {
+      props: {
+        totalLimit: null,
+        dailyLimit: 120,
+        weeklyLimit: null,
+        dailyResetMode: null,
+        dailyResetHour: null,
+        weeklyResetMode: null,
+        weeklyResetDay: null,
+        weeklyResetHour: null,
+        resetTimezone: null
+      }
+    })
+
+    expect(wrapper.emitted('update:dailyResetMode')?.[0]).toEqual(['fixed'])
+    expect(wrapper.emitted('update:dailyResetHour')?.[0]).toEqual([0])
+    expect(wrapper.emitted('update:resetTimezone')?.[0]).toEqual(['Asia/Shanghai'])
+  })
+
   it('defaults fixed-mode reset timezone to Asia/Shanghai', async () => {
     const wrapper = mount(QuotaLimitCard, {
       props: {

@@ -247,7 +247,7 @@ func incrementUsageBillingAccountQuota(ctx context.Context, tx *sql.Tx, accountI
 		`UPDATE accounts SET extra = (
 			COALESCE(extra, '{}'::jsonb)
 			|| jsonb_build_object('quota_used', COALESCE((extra->>'quota_used')::numeric, 0) + $1)
-			|| CASE WHEN COALESCE((extra->>'quota_daily_limit')::numeric, 0) > 0 THEN
+			|| CASE WHEN `+quotaDailyLimitEnabledExpr+` THEN
 				jsonb_build_object(
 					'quota_daily_used',
 					CASE WHEN `+dailyResetNeededExpr+`
@@ -255,11 +255,11 @@ func incrementUsageBillingAccountQuota(ctx context.Context, tx *sql.Tx, accountI
 					ELSE COALESCE((extra->>'quota_daily_used')::numeric, 0) + $1 END,
 					'quota_daily_start',
 					CASE WHEN `+dailyResetNeededExpr+`
-					THEN CASE WHEN COALESCE(extra->>'quota_daily_reset_mode', 'rolling') = 'fixed' THEN `+currentDailyWindowStartStrExpr+` ELSE `+nowUTC+` END
+					THEN CASE WHEN `+dailyFixedResetModeExpr+` THEN `+currentDailyWindowStartStrExpr+` ELSE `+nowUTC+` END
 					ELSE COALESCE(extra->>'quota_daily_start', `+nowUTC+`) END
 				)
 				|| CASE WHEN `+dailyResetNeededExpr+` AND `+nextDailyResetAtExpr+` IS NOT NULL
-				   THEN jsonb_build_object('quota_daily_reset_at', `+nextDailyResetAtExpr+`)
+				   THEN jsonb_build_object('quota_daily_reset_at', `+nextDailyResetAtExpr+`, 'quota_daily_reset_mode', 'fixed')
 				   ELSE '{}'::jsonb END
 			ELSE '{}'::jsonb END
 			|| CASE WHEN COALESCE((extra->>'quota_weekly_limit')::numeric, 0) > 0 THEN

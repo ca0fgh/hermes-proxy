@@ -208,6 +208,50 @@ func (s *AccountRepoSuite) TestResetExpiredQuotaPeriods_ClearsExpiredDailyQuotaA
 	s.Require().Equal(1, outboxCount)
 }
 
+func (s *AccountRepoSuite) TestResetExpiredQuotaPeriods_TreatsLegacyDailyLimitAsFixedMidnight() {
+	_, _ = s.repo.sql.ExecContext(s.ctx, "TRUNCATE scheduler_outbox")
+
+	tz, err := time.LoadLocation(service.DefaultQuotaResetTimezone)
+	s.Require().NoError(err)
+	now := time.Now().In(tz)
+	lastReset := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, tz)
+	legacy := mustCreateAccount(s.T(), s.client, &service.Account{
+		Name:     "legacy-fixed-daily-" + now.Format("150405.000000"),
+		Platform: service.PlatformOpenAI,
+		Type:     service.AccountTypeAPIKey,
+		Extra: map[string]any{
+			"quota_daily_limit": 120.0,
+			"quota_daily_used":  120.10,
+			"quota_daily_start": lastReset.Add(-time.Second).UTC().Format(time.RFC3339),
+		},
+	})
+
+	updated, err := s.repo.ResetExpiredQuotaPeriods(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(int64(1), updated)
+
+	var dailyUsed float64
+	var resetMode string
+	var resetAt string
+	s.Require().NoError(scanSingleRow(s.ctx, s.repo.sql, `
+		SELECT
+			COALESCE((extra->>'quota_daily_used')::numeric, 0),
+			COALESCE(extra->>'quota_daily_reset_mode', ''),
+			COALESCE(extra->>'quota_daily_reset_at', '')
+		FROM accounts WHERE id = $1
+	`, []any{legacy.ID}, &dailyUsed, &resetMode, &resetAt))
+	s.Require().Zero(dailyUsed)
+	s.Require().Equal("fixed", resetMode)
+	s.Require().NotEmpty(resetAt)
+
+	var outboxCount int
+	s.Require().NoError(scanSingleRow(s.ctx, s.repo.sql, `
+		SELECT COUNT(*) FROM scheduler_outbox
+		WHERE event_type = $1 AND account_id = $2
+	`, []any{service.SchedulerOutboxEventAccountChanged, legacy.ID}, &outboxCount))
+	s.Require().Equal(1, outboxCount)
+}
+
 func (s *AccountRepoSuite) TestUpdate_SyncSchedulerSnapshotOnCredentialsChange() {
 	account := mustCreateAccount(s.T(), s.client, &service.Account{
 		Name:        "sync-credentials-update",

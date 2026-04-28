@@ -4246,23 +4246,29 @@ const createAccountAndFinish = async (
     if (editQuotaLimit.value != null && editQuotaLimit.value > 0) {
       quotaExtra.quota_limit = editQuotaLimit.value
     }
-    if (editQuotaDailyLimit.value != null && editQuotaDailyLimit.value > 0) {
+    const dailyQuotaEnabled = editQuotaDailyLimit.value != null && editQuotaDailyLimit.value > 0
+    const dailyResetMode = editDailyResetMode.value || 'fixed'
+    if (dailyQuotaEnabled) {
       quotaExtra.quota_daily_limit = editQuotaDailyLimit.value
     }
     if (editQuotaWeeklyLimit.value != null && editQuotaWeeklyLimit.value > 0) {
       quotaExtra.quota_weekly_limit = editQuotaWeeklyLimit.value
     }
-    // Quota reset mode config
-    if (editDailyResetMode.value === 'fixed') {
-      quotaExtra.quota_daily_reset_mode = 'fixed'
-      quotaExtra.quota_daily_reset_hour = editDailyResetHour.value ?? 0
+    // Daily quota defaults to fixed midnight reset unless explicitly set to rolling.
+    if (dailyQuotaEnabled) {
+      quotaExtra.quota_daily_reset_mode = dailyResetMode
+      if (dailyResetMode === 'fixed') {
+        quotaExtra.quota_daily_reset_hour = editDailyResetHour.value ?? 0
+      } else {
+        delete quotaExtra.quota_daily_reset_hour
+      }
     }
     if (editWeeklyResetMode.value === 'fixed') {
       quotaExtra.quota_weekly_reset_mode = 'fixed'
       quotaExtra.quota_weekly_reset_day = editWeeklyResetDay.value ?? 1
       quotaExtra.quota_weekly_reset_hour = editWeeklyResetHour.value ?? 0
     }
-    if (editDailyResetMode.value === 'fixed' || editWeeklyResetMode.value === 'fixed') {
+    if ((dailyQuotaEnabled && dailyResetMode === 'fixed') || editWeeklyResetMode.value === 'fixed') {
       quotaExtra.quota_reset_timezone = editResetTimezone.value || DEFAULT_QUOTA_RESET_TIMEZONE
     }
     // Quota notify config

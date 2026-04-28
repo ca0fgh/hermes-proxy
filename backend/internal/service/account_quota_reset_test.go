@@ -333,6 +333,29 @@ func TestValidateQuotaResetConfig_ValidRolling(t *testing.T) {
 	assert.NoError(t, ValidateQuotaResetConfig(extra))
 }
 
+func TestAccountDailyQuotaWithoutModeDefaultsToFixedMidnight(t *testing.T) {
+	tz, err := time.LoadLocation(DefaultQuotaResetTimezone)
+	require.NoError(t, err)
+	now := time.Now().In(tz)
+	lastReset := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, tz)
+
+	account := &Account{
+		Status:      StatusActive,
+		Schedulable: true,
+		Type:        AccountTypeAPIKey,
+		Extra: map[string]any{
+			"quota_daily_limit": 10.0,
+			"quota_daily_used":  10.0,
+			"quota_daily_start": lastReset.Add(-time.Second).UTC().Format(time.RFC3339),
+		},
+	}
+
+	require.Equal(t, "fixed", account.GetQuotaDailyResetMode())
+	require.True(t, account.IsDailyQuotaPeriodExpired())
+	require.False(t, account.IsQuotaExceeded())
+	require.True(t, account.IsSchedulable())
+}
+
 func TestValidateQuotaResetConfig_InvalidTimezone(t *testing.T) {
 	extra := map[string]any{
 		"quota_reset_timezone": "Not/A/Timezone",
@@ -437,6 +460,21 @@ func TestComputeQuotaResetAt_RollingMode_NoResetAt(t *testing.T) {
 	_, hasWeeklyResetAt := extra["quota_weekly_reset_at"]
 	assert.False(t, hasDailyResetAt, "rolling mode should not set quota_daily_reset_at")
 	assert.False(t, hasWeeklyResetAt, "rolling mode should not set quota_weekly_reset_at")
+}
+
+func TestComputeQuotaResetAt_DailyLimitDefaultsToFixed(t *testing.T) {
+	extra := map[string]any{
+		"quota_daily_limit": 120.0,
+	}
+	ComputeQuotaResetAt(extra)
+
+	require.Equal(t, "fixed", extra["quota_daily_reset_mode"])
+	require.Equal(t, 0, extra["quota_daily_reset_hour"])
+	resetAtStr, ok := extra["quota_daily_reset_at"].(string)
+	require.True(t, ok, "quota_daily_reset_at should be set for daily limits")
+	resetAt, err := time.Parse(time.RFC3339, resetAtStr)
+	require.NoError(t, err)
+	require.True(t, resetAt.After(time.Now()))
 }
 
 func TestComputeQuotaResetAt_RollingMode_ClearsExistingResetAt(t *testing.T) {

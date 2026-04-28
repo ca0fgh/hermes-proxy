@@ -1847,11 +1847,16 @@ func (r *accountRepository) FindByExtraField(ctx context.Context, key string, va
 const nowUTC = `to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
 const defaultQuotaResetTimezoneSQL = `'` + service.DefaultQuotaResetTimezone + `'`
 const quotaResetTimezoneExpr = `COALESCE(extra->>'quota_reset_timezone', ` + defaultQuotaResetTimezoneSQL + `)`
+const quotaDailyLimitEnabledExpr = `COALESCE(NULLIF(extra->>'quota_daily_limit', '')::numeric, 0) > 0`
+
+// dailyFixedResetModeExpr treats legacy daily-limit accounts without an
+// explicit reset mode as fixed midnight reset. Explicit rolling still opt-outs.
+const dailyFixedResetModeExpr = `(extra->>'quota_daily_reset_mode' = 'fixed' OR (extra->>'quota_daily_reset_mode' IS NULL AND ` + quotaDailyLimitEnabledExpr + `))`
 
 // dailyExpiredExpr is a SQL expression that evaluates to TRUE when daily quota period has expired.
 // Supports both rolling (24h from start) and fixed (pre-computed reset_at) modes.
 const dailyExpiredExpr = `(
-	CASE WHEN COALESCE(extra->>'quota_daily_reset_mode', 'rolling') = 'fixed'
+	CASE WHEN ` + dailyFixedResetModeExpr + `
 	THEN NOW() >= COALESCE((extra->>'quota_daily_reset_at')::timestamptz, '1970-01-01'::timestamptz)
 	ELSE COALESCE((extra->>'quota_daily_start')::timestamptz, '1970-01-01'::timestamptz)
 		+ '24 hours'::interval <= NOW()
@@ -1920,7 +1925,7 @@ const currentWeeklyWindowStartTsExpr = `(
 
 // dailyResetNeededExpr resets fixed daily windows either when reset_at passed or when start is stale.
 const dailyResetNeededExpr = `(
-	CASE WHEN COALESCE(extra->>'quota_daily_reset_mode', 'rolling') = 'fixed'
+	CASE WHEN ` + dailyFixedResetModeExpr + `
 	THEN (
 		NOW() >= COALESCE((extra->>'quota_daily_reset_at')::timestamptz, '1970-01-01'::timestamptz)
 		OR COALESCE((extra->>'quota_daily_start')::timestamptz, '1970-01-01'::timestamptz) < ` + currentDailyWindowStartTsExpr + `
@@ -1949,7 +1954,7 @@ const currentWeeklyWindowStartStrExpr = `to_char((` + currentWeeklyWindowStartTs
 // For fixed mode: computes the next future reset time based on NOW(), timezone, and configured hour.
 // This correctly handles long-inactive accounts by jumping directly to the next valid reset point.
 const nextDailyResetAtExpr = `(
-	CASE WHEN COALESCE(extra->>'quota_daily_reset_mode', 'rolling') = 'fixed'
+	CASE WHEN ` + dailyFixedResetModeExpr + `
 	THEN to_char((
 		-- Compute today's reset point in the configured timezone, then pick next future one
 		CASE WHEN NOW() >= (
@@ -2023,7 +2028,7 @@ func (r *accountRepository) IncrementQuotaUsed(ctx context.Context, id int64, am
 			-- 总额度：始终递增
 			|| jsonb_build_object('quota_used', COALESCE((extra->>'quota_used')::numeric, 0) + $1)
 			-- 日额度：仅在 quota_daily_limit > 0 时处理
-			|| CASE WHEN COALESCE((extra->>'quota_daily_limit')::numeric, 0) > 0 THEN
+			|| CASE WHEN `+quotaDailyLimitEnabledExpr+` THEN
 				jsonb_build_object(
 					'quota_daily_used',
 					CASE WHEN `+dailyResetNeededExpr+`
@@ -2031,12 +2036,12 @@ func (r *accountRepository) IncrementQuotaUsed(ctx context.Context, id int64, am
 					ELSE COALESCE((extra->>'quota_daily_used')::numeric, 0) + $1 END,
 					'quota_daily_start',
 					CASE WHEN `+dailyResetNeededExpr+`
-					THEN CASE WHEN COALESCE(extra->>'quota_daily_reset_mode', 'rolling') = 'fixed' THEN `+currentDailyWindowStartStrExpr+` ELSE `+nowUTC+` END
+					THEN CASE WHEN `+dailyFixedResetModeExpr+` THEN `+currentDailyWindowStartStrExpr+` ELSE `+nowUTC+` END
 					ELSE COALESCE(extra->>'quota_daily_start', `+nowUTC+`) END
 				)
 				-- 固定模式重置时更新下次重置时间
 				|| CASE WHEN `+dailyResetNeededExpr+` AND `+nextDailyResetAtExpr+` IS NOT NULL
-				   THEN jsonb_build_object('quota_daily_reset_at', `+nextDailyResetAtExpr+`)
+				   THEN jsonb_build_object('quota_daily_reset_at', `+nextDailyResetAtExpr+`, 'quota_daily_reset_mode', 'fixed')
 				   ELSE '{}'::jsonb END
 			ELSE '{}'::jsonb END
 			-- 周额度：仅在 quota_weekly_limit > 0 时处理
@@ -2118,10 +2123,10 @@ func (r *accountRepository) ResetExpiredQuotaPeriods(ctx context.Context) (int64
 		WITH evaluated AS (
 			SELECT
 				id,
-				COALESCE(extra->>'quota_daily_reset_mode', 'rolling') = 'fixed' AS daily_fixed,
+				`+dailyFixedResetModeExpr+` AS daily_fixed,
 				COALESCE(extra->>'quota_weekly_reset_mode', 'rolling') = 'fixed' AS weekly_fixed,
 				(
-					COALESCE((extra->>'quota_daily_limit')::numeric, 0) > 0
+					`+quotaDailyLimitEnabledExpr+`
 					AND COALESCE((extra->>'quota_daily_used')::numeric, 0) > 0
 					AND `+dailyResetNeededExpr+`
 				) AS daily_reset,
@@ -2139,7 +2144,7 @@ func (r *accountRepository) ResetExpiredQuotaPeriods(ctx context.Context) (int64
 				AND type IN ('`+service.AccountTypeAPIKey+`', '`+service.AccountTypeBedrock+`')
 				AND (
 					(
-						COALESCE((extra->>'quota_daily_limit')::numeric, 0) > 0
+						`+quotaDailyLimitEnabledExpr+`
 						AND COALESCE((extra->>'quota_daily_used')::numeric, 0) > 0
 					)
 					OR (
@@ -2161,7 +2166,11 @@ func (r *accountRepository) ResetExpiredQuotaPeriods(ctx context.Context) (int64
 						THEN jsonb_build_object('quota_daily_used', 0)
 						ELSE '{}'::jsonb END
 					|| CASE WHEN e.daily_reset AND e.daily_fixed
-						THEN jsonb_build_object('quota_daily_start', e.daily_start, 'quota_daily_reset_at', e.daily_reset_at)
+						THEN jsonb_build_object(
+							'quota_daily_start', e.daily_start,
+							'quota_daily_reset_at', e.daily_reset_at,
+							'quota_daily_reset_mode', 'fixed'
+						)
 						ELSE '{}'::jsonb END
 					|| CASE WHEN e.weekly_reset
 						THEN jsonb_build_object('quota_weekly_used', 0)

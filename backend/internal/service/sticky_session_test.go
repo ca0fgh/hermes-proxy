@@ -21,6 +21,11 @@ func TestShouldClearStickySession(t *testing.T) {
 	now := time.Now()
 	future := now.Add(1 * time.Hour)
 	past := now.Add(-1 * time.Hour)
+	tz, err := time.LoadLocation(DefaultQuotaResetTimezone)
+	require.NoError(t, err)
+	nowInTZ := now.In(tz)
+	lastDailyReset := time.Date(nowInTZ.Year(), nowInTZ.Month(), nowInTZ.Day(), 0, 0, 0, 0, tz)
+	currentDailyWindowStart := lastDailyReset.Add(time.Second).UTC().Format(time.RFC3339)
 
 	// 短限流时间（有限流即清除粘性会话）
 	shortRateLimitReset := now.Add(5 * time.Second).Format(time.RFC3339)
@@ -98,7 +103,7 @@ func TestShouldClearStickySession(t *testing.T) {
 				Extra: map[string]any{
 					"quota_daily_limit": 10.0,
 					"quota_daily_used":  10.0,
-					"quota_daily_start": now.Add(-1 * time.Hour).Format(time.RFC3339),
+					"quota_daily_start": currentDailyWindowStart,
 				},
 			},
 			requestedModel: "",
@@ -113,7 +118,7 @@ func TestShouldClearStickySession(t *testing.T) {
 				Extra: map[string]any{
 					"quota_daily_limit": 10.0,
 					"quota_daily_used":  10.0,
-					"quota_daily_start": now.Add(-1 * time.Hour).Format(time.RFC3339),
+					"quota_daily_start": currentDailyWindowStart,
 				},
 			},
 			requestedModel: "",
@@ -122,8 +127,8 @@ func TestShouldClearStickySession(t *testing.T) {
 		{
 			name: "overloaded account",
 			account: &Account{
-				Status:       StatusActive,
-				Schedulable:  true,
+				Status:        StatusActive,
+				Schedulable:   true,
 				OverloadUntil: &future,
 			},
 			requestedModel: "",
