@@ -8,6 +8,7 @@ import (
 	dbent "github.com/ca0fgh/hermes-proxy/ent"
 	"github.com/ca0fgh/hermes-proxy/internal/config"
 	"github.com/ca0fgh/hermes-proxy/internal/payment"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/antigravity"
 	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
@@ -58,6 +59,7 @@ func ProvideTokenRefreshService(
 	privacyClientFactory PrivacyClientFactory,
 	proxyRepo ProxyRepository,
 	refreshAPI *OAuthRefreshAPI,
+	runtimeBlocker AccountRuntimeBlocker,
 ) *TokenRefreshService {
 	svc := NewTokenRefreshService(accountRepo, oauthService, openaiOAuthService, geminiOAuthService, antigravityOAuthService, cacheInvalidator, schedulerCache, cfg, tempUnschedCache)
 	// 注入 OpenAI privacy opt-out 依赖
@@ -66,6 +68,7 @@ func ProvideTokenRefreshService(
 	svc.SetRefreshAPI(refreshAPI)
 	// 调用侧显式注入后台刷新策略，避免策略漂移
 	svc.SetRefreshPolicy(DefaultBackgroundRefreshPolicy())
+	svc.SetAccountRuntimeBlocker(runtimeBlocker)
 	svc.Start()
 	return svc
 }
@@ -150,8 +153,10 @@ func ProvideAccountExpiryService(accountRepo AccountRepository) *AccountExpirySe
 }
 
 // ProvideSubscriptionExpiryService creates and starts SubscriptionExpiryService.
-func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository) *SubscriptionExpiryService {
+func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository, settingRepo SettingRepository, notificationEmailService *NotificationEmailService) *SubscriptionExpiryService {
 	svc := NewSubscriptionExpiryService(userSubRepo, time.Minute)
+	svc.SetSettingRepository(settingRepo)
+	svc.SetNotificationEmailService(notificationEmailService)
 	svc.Start()
 	return svc
 }
@@ -180,6 +185,7 @@ func ProvideConcurrencyService(cache ConcurrencyCache, accountRepo AccountReposi
 		logger.LegacyPrintf("service.concurrency", "Warning: startup cleanup stale process slots failed: %v", err)
 	}
 	if cfg != nil {
+		svc.SetAccountLoadBatchCacheTTL(time.Duration(cfg.Gateway.Scheduling.LoadBatchCacheTTLMS) * time.Millisecond)
 		svc.StartSlotCleanupWorker(accountRepo, cfg.Gateway.Scheduling.SlotCleanupInterval)
 	}
 	return svc
@@ -271,15 +277,22 @@ func ProvideOpsAlertEvaluatorService(
 // ProvideOpsCleanupService creates and starts OpsCleanupService (cron scheduled).
 // channelMonitorSvc 让维护任务（聚合 + 历史/聚合软删）跟随 ops 清理 cron 一起跑，
 // 共享 leader lock + heartbeat。
+// settingRepo 让 cleanup service 自己读 ops_advanced_settings.data_retention 覆盖 cfg；
+// opsService 用来反向注入 cleanup hook，以便 UI 改清理设置时能 Reload cron。
 func ProvideOpsCleanupService(
 	opsRepo OpsRepository,
 	db *sql.DB,
 	redisClient *redis.Client,
 	cfg *config.Config,
 	channelMonitorSvc *ChannelMonitorService,
+	settingRepo SettingRepository,
+	opsService *OpsService,
 ) *OpsCleanupService {
-	svc := NewOpsCleanupService(opsRepo, db, redisClient, cfg, channelMonitorSvc)
+	svc := NewOpsCleanupService(opsRepo, db, redisClient, cfg, channelMonitorSvc, settingRepo)
 	svc.Start()
+	if opsService != nil {
+		opsService.SetCleanupReloader(svc)
+	}
 	return svc
 }
 
@@ -388,6 +401,10 @@ func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupReposit
 	svc := NewSettingService(settingRepo, cfg)
 	svc.SetDefaultSubscriptionGroupReader(groupRepo)
 	svc.SetProxyRepository(proxyRepo)
+	if err := svc.LoadAPIKeyACLTrustForwardedIPSetting(context.Background()); err != nil {
+		logger.LegacyPrintf("service.setting", "Warning: load api key acl forwarded ip setting failed: %v", err)
+	}
+	antigravity.SetUserAgentVersionResolver(svc.GetAntigravityUserAgentVersion)
 	return svc
 }
 
@@ -404,12 +421,28 @@ func ProvideBillingCacheService(
 	return NewBillingCacheService(cache, userRepo, subRepo, apiKeyRepo, rpmCache, rateRepo, cfg)
 }
 
+// ProvideAPIKeyService wires APIKeyService and connects rate-limit cache invalidation.
+func ProvideAPIKeyService(
+	apiKeyRepo APIKeyRepository,
+	userRepo UserRepository,
+	groupRepo GroupRepository,
+	userSubRepo UserSubscriptionRepository,
+	userGroupRateRepo UserGroupRateRepository,
+	cache APIKeyCache,
+	cfg *config.Config,
+	billingCacheService *BillingCacheService,
+) *APIKeyService {
+	svc := NewAPIKeyService(apiKeyRepo, userRepo, groupRepo, userSubRepo, userGroupRateRepo, cache, cfg)
+	svc.SetRateLimitCacheInvalidator(billingCacheService)
+	return svc
+}
+
 // ProviderSet is the Wire provider set for all services
 var ProviderSet = wire.NewSet(
 	// Core services
 	NewAuthService,
 	NewUserService,
-	NewAPIKeyService,
+	ProvideAPIKeyService,
 	ProvideAPIKeyAuthCacheInvalidator,
 	NewGroupService,
 	NewAccountService,
@@ -426,6 +459,7 @@ var ProviderSet = wire.NewSet(
 	NewAdminService,
 	NewGatewayService,
 	NewOpenAIGatewayService,
+	wire.Bind(new(AccountRuntimeBlocker), new(*OpenAIGatewayService)),
 	NewOAuthService,
 	NewOpenAIOAuthService,
 	NewGeminiOAuthService,
@@ -461,6 +495,7 @@ var ProviderSet = wire.NewSet(
 	ProvideOpsCleanupService,
 	ProvideOpsScheduledReportService,
 	NewEmailService,
+	NewNotificationEmailService,
 	ProvideEmailQueueService,
 	NewTurnstileService,
 	NewSubscriptionService,
@@ -494,9 +529,10 @@ var ProviderSet = wire.NewSet(
 	NewGroupCapacityService,
 	NewChannelService,
 	NewModelPricingResolver,
+	NewContentModerationService,
 	NewAffiliateService,
 	ProvidePaymentConfigService,
-	NewPaymentService,
+	ProvidePaymentService,
 	ProvidePaymentOrderExpiryService,
 	ProvideBalanceNotifyService,
 	ProvideChannelMonitorService,
@@ -511,8 +547,17 @@ func ProvidePaymentConfigService(entClient *dbent.Client, settingRepo SettingRep
 }
 
 // ProvideBalanceNotifyService creates BalanceNotifyService
-func ProvideBalanceNotifyService(emailService *EmailService, settingRepo SettingRepository, accountRepo AccountRepository) *BalanceNotifyService {
-	return NewBalanceNotifyService(emailService, settingRepo, accountRepo)
+func ProvideBalanceNotifyService(emailService *EmailService, settingRepo SettingRepository, accountRepo AccountRepository, notificationEmailService *NotificationEmailService) *BalanceNotifyService {
+	svc := NewBalanceNotifyService(emailService, settingRepo, accountRepo)
+	svc.SetNotificationEmailService(notificationEmailService)
+	return svc
+}
+
+// ProvidePaymentService creates PaymentService and attaches notification email delivery.
+func ProvidePaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, affiliateService *AffiliateService, notificationEmailService *NotificationEmailService) *PaymentService {
+	svc := NewPaymentService(entClient, registry, loadBalancer, redeemService, subscriptionSvc, configService, userRepo, groupRepo, affiliateService)
+	svc.SetNotificationEmailService(notificationEmailService)
+	return svc
 }
 
 // ProvidePaymentOrderExpiryService creates and starts PaymentOrderExpiryService.

@@ -121,7 +121,7 @@ func (h *SoraGatewayHandler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
-	setOpsRequestContext(c, "", false, body)
+	setOpsRequestContext(c, "", false)
 
 	// 校验请求体 JSON 合法性
 	if !gjson.ValidBytes(body) {
@@ -158,7 +158,7 @@ func (h *SoraGatewayHandler) ChatCompletions(c *gin.Context) {
 		}
 	}
 
-	setOpsRequestContext(c, reqModel, clientStream, body)
+	setOpsRequestContext(c, reqModel, clientStream)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(clientStream, false)))
 
 	platform := ""
