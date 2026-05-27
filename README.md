@@ -32,7 +32,7 @@ Demo credentials (shared demo environment; **not** created automatically for sel
 
 ## Overview
 
-Sub2API is an AI API gateway platform designed to distribute and manage API quotas from AI product subscriptions. Users can access upstream AI services through platform-generated API Keys, while the platform handles authentication, billing, load balancing, and request forwarding.
+hermes-proxy is an AI API gateway platform designed to distribute and manage API quotas from AI product subscriptions. Users can access upstream AI services through platform-generated API Keys, while the platform handles authentication, billing, load balancing, and request forwarding.
 
 ## Features
 
@@ -76,7 +76,7 @@ Community projects that extend or integrate with hermes-proxy:
 
 ## Nginx Reverse Proxy Note
 
-When using Nginx as a reverse proxy for Sub2API (or CRS) with Codex CLI, add the following to the `http` block in your Nginx configuration:
+When using Nginx as a reverse proxy for hermes-proxy (or CRS) with Codex CLI, add the following to the `http` block in your Nginx configuration:
 
 ```nginx
 underscores_in_headers on;
@@ -181,7 +181,7 @@ curl -sSL https://raw.githubusercontent.com/ca0fgh/hermes-proxy/main/deploy/dock
 docker compose up -d
 
 # View logs
-docker compose logs -f sub2api
+docker compose logs -f hermes-proxy
 ```
 
 **What the script does:**
@@ -254,7 +254,7 @@ docker compose up -d
 docker compose -f docker-compose.local.yml ps
 
 # 7. View logs
-docker compose -f docker-compose.local.yml logs -f sub2api
+docker compose -f docker-compose.local.yml logs -f hermes-proxy
 ```
 
 #### Deployment Versions
@@ -272,7 +272,7 @@ Open `http://YOUR_SERVER_IP:8080` in your browser.
 
 If admin password was auto-generated, find it in logs:
 ```bash
-docker compose -f docker-compose.local.yml logs sub2api | grep "admin password"
+docker compose -f docker-compose.local.yml logs hermes-proxy | grep "admin password"
 ```
 
 #### Upgrade
@@ -297,8 +297,8 @@ tar czf hermes-proxy-complete.tar.gz hermes-proxy-deploy/
 scp hermes-proxy-complete.tar.gz user@new-server:/path/
 
 # On new server
-tar xzf sub2api-complete.tar.gz
-cd sub2api-deploy/
+tar xzf hermes-proxy-complete.tar.gz
+cd hermes-proxy-deploy/
 docker compose -f docker-compose.local.yml up -d
 ```
 

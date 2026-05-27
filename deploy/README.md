@@ -56,10 +56,10 @@ chmod +x docker-deploy.sh
 docker compose -f docker-compose.local.yml up -d
 
 # View logs
-docker compose -f docker-compose.local.yml logs -f sub2api
+docker compose -f docker-compose.local.yml logs -f hermes-proxy
 
 # If admin password was auto-generated, find it in logs:
-docker compose -f docker-compose.local.yml logs sub2api | grep "admin password"
+docker compose -f docker-compose.local.yml logs hermes-proxy | grep "admin password"
 
 # Access Web UI
 # http://localhost:8080
@@ -91,7 +91,7 @@ mkdir -p data postgres_data redis_data
 docker compose -f docker-compose.local.yml up -d
 
 # View logs (check for auto-generated admin password)
-docker compose -f docker-compose.local.yml logs -f sub2api
+docker compose -f docker-compose.local.yml logs -f hermes-proxy
 
 # Access Web UI
 # http://localhost:8080
@@ -121,7 +121,7 @@ When using Docker Compose with `AUTO_SETUP=true`:
 
 3. If `ADMIN_PASSWORD` is not set, check logs for the generated password:
    ```bash
-   docker compose logs sub2api | grep "admin password"
+   docker compose logs hermes-proxy | grep "admin password"
    ```
 
 ### Database Migration Notes (PostgreSQL)
@@ -168,10 +168,10 @@ docker compose -f docker-compose.local.yml up -d
 docker compose -f docker-compose.local.yml down
 
 # View logs
-docker compose -f docker-compose.local.yml logs -f sub2api
+docker compose -f docker-compose.local.yml logs -f hermes-proxy
 
 # Restart Sub2API only
-docker compose -f docker-compose.local.yml restart sub2api
+docker compose -f docker-compose.local.yml restart hermes-proxy
 
 # Update to latest version
 docker compose -f docker-compose.local.yml pull
@@ -192,10 +192,10 @@ docker compose up -d
 docker compose down
 
 # View logs
-docker compose logs -f sub2api
+docker compose logs -f hermes-proxy
 
 # Restart Sub2API only
-docker compose restart sub2api
+docker compose restart hermes-proxy
 
 # Update to latest version
 docker compose pull
@@ -495,7 +495,7 @@ For **local directory version**:
 docker compose -f docker-compose.local.yml ps
 
 # View detailed logs
-docker compose -f docker-compose.local.yml logs --tail=100 sub2api
+docker compose -f docker-compose.local.yml logs --tail=100 hermes-proxy
 
 # Check database connection
 docker compose -f docker-compose.local.yml exec postgres pg_isready
@@ -517,7 +517,7 @@ For **named volumes version**:
 docker compose ps
 
 # View detailed logs
-docker compose logs --tail=100 sub2api
+docker compose logs --tail=100 hermes-proxy
 
 # Check database connection
 docker compose exec postgres pg_isready

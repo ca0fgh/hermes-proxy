@@ -64,7 +64,7 @@ func TestMain(m *testing.M) {
 	pgContainer, err := tcpostgres.Run(
 		ctx,
 		postgresImage,
-		tcpostgres.WithDatabase("kyllenios_core_test"),
+		tcpostgres.WithDatabase("hermes-proxy-test"),
 		tcpostgres.WithUsername("postgres"),
 		tcpostgres.WithPassword("postgres"),
 		tcpostgres.BasicWaitStrategies(),

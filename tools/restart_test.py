@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import importlib.util
 import io
+import stat
 import tempfile
 import unittest
 from pathlib import Path
@@ -14,378 +15,241 @@ restart = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(restart)
 
 
-def make_args(*, restart_only: bool = False, app_dir=None, go_bin=None, node_bin=None, pnpm_bin=None):
+def make_args(*, restart_only=False, no_cache=False, wait_timeout=180, docker_bin=""):
     return argparse.Namespace(
         restart_only=restart_only,
-        app_dir=app_dir,
-        go_bin=go_bin,
-        node_bin=node_bin,
-        pnpm_bin=pnpm_bin,
+        no_cache=no_cache,
+        wait_timeout=wait_timeout,
+        docker_bin=docker_bin,
     )
 
 
-class CollectMissingDependenciesTest(unittest.TestCase):
-    def test_build_mode_reports_all_missing_dependencies_before_start(self):
-        args = make_args()
+def completed(returncode=0, stdout="", stderr=""):
+    return restart.subprocess.CompletedProcess([], returncode, stdout=stdout, stderr=stderr)
 
+
+class ResolveDockerBinTest(unittest.TestCase):
+    def test_returns_override_when_executable(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            binary_path = app_dir / "hermes-proxy"
-            config_path = app_dir / "config.yaml"
+            fake_docker = Path(tmpdir) / "docker"
+            fake_docker.write_text("#!/bin/sh\n", encoding="utf-8")
+            fake_docker.chmod(fake_docker.stat().st_mode | stat.S_IXUSR)
 
-            with mock.patch.object(restart, "find_tool", return_value="") as find_tool:
-                with mock.patch.object(restart, "frontend_dependencies_installed", return_value=False):
-                    with mock.patch.object(restart, "local_runtime_dependency_installed", return_value=False):
-                        issues = restart.collect_preflight_issues(args, binary_path, config_path)
+            resolved = restart.resolve_docker_bin(str(fake_docker))
 
-        self.assertEqual(3, find_tool.call_count)
-        joined = "\n".join(issues)
-        self.assertIn("`node`", joined)
-        self.assertIn("`pnpm`", joined)
-        self.assertIn("`go`", joined)
-        self.assertIn("PostgreSQL", joined)
-        self.assertIn("Redis", joined)
-        self.assertIn("frontend dependencies", joined)
-        self.assertNotIn("config.yaml", joined)
+        self.assertEqual(str(fake_docker), resolved)
 
-    def test_restart_only_skips_build_tool_checks_but_requires_runtime_files(self):
-        args = make_args(restart_only=True)
+    def test_fails_when_docker_missing_everywhere(self):
+        with mock.patch.object(restart.shutil, "which", return_value=""):
+            with mock.patch.dict(restart.os.environ, {}, clear=True):
+                with mock.patch.object(restart, "DOCKER_EXTRA_PATHS", ["/nope/docker"]):
+                    stderr = io.StringIO()
+                    with contextlib.redirect_stderr(stderr):
+                        with self.assertRaises(SystemExit) as exc:
+                            restart.resolve_docker_bin("")
 
+        self.assertEqual(1, exc.exception.code)
+        self.assertIn("cannot find `docker`", stderr.getvalue())
+
+
+class ReadEnvValueTest(unittest.TestCase):
+    def test_reads_key_and_ignores_comments_and_default(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            binary_path = app_dir / "hermes-proxy"
-            config_path = app_dir / "config.yaml"
-
-            with mock.patch.object(restart, "find_tool") as find_tool:
-                with mock.patch.object(restart, "frontend_dependencies_installed") as frontend_dependencies_installed:
-                    with mock.patch.object(restart, "local_runtime_dependency_installed", return_value=False):
-                        issues = restart.collect_preflight_issues(args, binary_path, config_path)
-
-        joined = "\n".join(issues)
-        self.assertIn("hermes-proxy`: not found", joined)
-        self.assertIn("config.yaml", joined)
-        self.assertIn("PostgreSQL", joined)
-        self.assertIn("Redis", joined)
-        find_tool.assert_not_called()
-        frontend_dependencies_installed.assert_not_called()
-
-    def test_runtime_checks_report_postgres_and_redis_installation_before_start(self):
-        args = make_args(restart_only=True)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            binary_path = app_dir / "hermes-proxy"
-            binary_path.write_text("", encoding="utf-8")
-            config_path = app_dir / "config.yaml"
-            config_path.write_text(
+            env_file = Path(tmpdir) / ".env"
+            env_file.write_text(
                 "\n".join(
                     [
-                        "database:",
-                        "    host: 127.0.0.1",
-                        "    port: 5432",
-                        "redis:",
-                        "    host: 127.0.0.1",
-                        "    port: 6379",
+                        "# comment",
+                        "",
+                        "BIND_HOST=127.0.0.1",
+                        'SERVER_PORT="8080"',
+                        "EMPTY=",
                     ]
                 ),
                 encoding="utf-8",
             )
 
-            with mock.patch.object(restart, "local_runtime_dependency_installed", return_value=False):
-                issues = restart.collect_preflight_issues(args, binary_path, config_path)
+            self.assertEqual("127.0.0.1", restart.read_env_value(env_file, "BIND_HOST", "0.0.0.0"))
+            self.assertEqual("8080", restart.read_env_value(env_file, "SERVER_PORT", "9999"))
+            self.assertEqual("fallback", restart.read_env_value(env_file, "EMPTY", "fallback"))
+            self.assertEqual("fallback", restart.read_env_value(env_file, "MISSING", "fallback"))
+
+    def test_returns_default_when_file_missing(self):
+        missing = Path("/nonexistent/.env")
+        self.assertEqual("8080", restart.read_env_value(missing, "SERVER_PORT", "8080"))
+
+
+class ComposeCommandTest(unittest.TestCase):
+    def test_base_command_includes_both_files_and_project(self):
+        command = restart.compose_base_command("/usr/bin/docker")
+
+        self.assertEqual(["/usr/bin/docker", "compose"], command[:2])
+        self.assertIn("-p", command)
+        self.assertIn(restart.PROJECT_NAME, command)
+        self.assertEqual(2, command.count("-f"))
+        joined = " ".join(command)
+        for compose_file in restart.COMPOSE_FILES:
+            self.assertIn(compose_file, joined)
+
+    def test_compose_up_builds_wait_command(self):
+        with mock.patch.object(restart, "run_command") as run_command:
+            restart.compose_up("/usr/bin/docker", 120)
+
+        command = run_command.call_args.args[0]
+        self.assertIn("up", command)
+        self.assertIn("-d", command)
+        self.assertIn("--wait", command)
+        self.assertIn("--wait-timeout", command)
+        self.assertIn("120", command)
+        self.assertEqual(restart.DEPLOY_DIR, run_command.call_args.kwargs["cwd"])
+
+
+class CollectPreflightIssuesTest(unittest.TestCase):
+    def test_reports_unreachable_daemon_and_missing_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            deploy_dir = Path(tmpdir)
+            with mock.patch.object(restart, "DEPLOY_DIR", deploy_dir):
+                with mock.patch.object(restart, "ENV_FILE", deploy_dir / ".env"):
+                    with mock.patch.object(restart.subprocess, "run") as run_cmd:
+                        # 1) docker version fails, 2) docker compose version fails
+                        run_cmd.side_effect = [completed(returncode=1), completed(returncode=1)]
+                        issues = restart.collect_preflight_issues("/usr/bin/docker")
 
         joined = "\n".join(issues)
-        self.assertIn("PostgreSQL", joined)
-        self.assertIn("Redis", joined)
+        self.assertIn("daemon not reachable", joined)
+        self.assertIn("v2 plugin not available", joined)
+        self.assertIn("compose file not found", joined)
+        self.assertIn(".env`: env file not found", joined)
 
-    def test_runtime_checks_use_installation_hints(self):
-        args = make_args(restart_only=True)
-
+    def test_no_issues_when_everything_present(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            binary_path = app_dir / "hermes-proxy"
-            binary_path.write_text("", encoding="utf-8")
-            config_path = app_dir / "config.yaml"
-            config_path.write_text("server:\n    port: 8080\n", encoding="utf-8")
+            deploy_dir = Path(tmpdir)
+            for compose_file in restart.COMPOSE_FILES:
+                (deploy_dir / compose_file).write_text("services: {}\n", encoding="utf-8")
+            (deploy_dir / ".env").write_text("POSTGRES_PASSWORD=x\n", encoding="utf-8")
 
-            with mock.patch.object(restart, "local_runtime_dependency_installed", return_value=False):
-                issues = restart.collect_preflight_issues(args, binary_path, config_path)
-
-        joined = "\n".join(issues)
-        self.assertIn("Install PostgreSQL 15+ first", joined)
-        self.assertIn("Install Redis 7+ first", joined)
-
-
-class BootstrapRuntimeFilesTest(unittest.TestCase):
-    def test_bootstrap_runtime_files_creates_app_dir_without_forcing_config(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir) / ".hermes-proxy-runtime"
-            config_path = app_dir / "config.yaml"
-
-            restart.bootstrap_runtime_files(app_dir)
-
-            self.assertTrue(app_dir.exists())
-            self.assertFalse(config_path.exists())
-
-    def test_collect_preflight_issues_allows_first_run_without_config_in_build_mode(self):
-        args = make_args()
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir) / ".hermes-proxy-runtime"
-            binary_path = app_dir / "hermes-proxy"
-            config_path = app_dir / "config.yaml"
-
-            restart.bootstrap_runtime_files(app_dir)
-            with mock.patch.object(restart, "find_tool", return_value="/mock/tool"):
-                with mock.patch.object(
-                    restart,
-                    "command_output",
-                    side_effect=["v18.0.0", "9.0.0", "go version go1.21.5 darwin/arm64"],
-                ):
-                    with mock.patch.object(restart, "frontend_dependencies_installed", return_value=True):
-                        with mock.patch.object(restart, "local_runtime_dependency_installed", return_value=True):
-                            issues = restart.collect_preflight_issues(args, binary_path, config_path)
+            with mock.patch.object(restart, "DEPLOY_DIR", deploy_dir):
+                with mock.patch.object(restart, "ENV_FILE", deploy_dir / ".env"):
+                    with mock.patch.object(restart.subprocess, "run") as run_cmd:
+                        run_cmd.side_effect = [completed(stdout="29.4.1"), completed(stdout="v5.1.3")]
+                        issues = restart.collect_preflight_issues("/usr/bin/docker")
 
         self.assertEqual([], issues)
 
 
-class EnsurePreflightReadyTest(unittest.TestCase):
-    def test_ensure_preflight_ready_fails_with_combined_hint(self):
-        args = make_args()
+class BuildImageTest(unittest.TestCase):
+    def test_build_image_passes_version_commit_and_buildkit(self):
+        with mock.patch.object(restart, "read_version", return_value="0.1.130"):
+            with mock.patch.object(restart, "git_commit", return_value="abc1234"):
+                with mock.patch.object(restart, "run_command") as run_command:
+                    restart.build_image("/usr/bin/docker", no_cache=True)
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            binary_path = app_dir / "hermes-proxy"
-            config_path = app_dir / "config.yaml"
+        command = run_command.call_args.args[0]
+        self.assertEqual(["/usr/bin/docker", "build", "-t", restart.IMAGE_TAG], command[:4])
+        self.assertIn("VERSION=0.1.130", command)
+        self.assertIn("COMMIT=abc1234", command)
+        self.assertIn("--no-cache", command)
+        self.assertEqual(".", command[-1])
+        self.assertEqual(restart.REPO_ROOT, run_command.call_args.kwargs["cwd"])
+        self.assertEqual("1", run_command.call_args.kwargs["env"]["DOCKER_BUILDKIT"])
 
-            with mock.patch.object(
-                restart,
-                "collect_preflight_issues",
-                return_value=["`pnpm`: missing", "`go`: missing"],
-            ):
-                stderr = io.StringIO()
-                with contextlib.redirect_stderr(stderr):
-                    with self.assertRaises(SystemExit) as exc:
-                        restart.ensure_preflight_ready(args, binary_path, config_path)
+    def test_build_image_without_no_cache(self):
+        with mock.patch.object(restart, "read_version", return_value="0.1.130"):
+            with mock.patch.object(restart, "git_commit", return_value="abc1234"):
+                with mock.patch.object(restart, "run_command") as run_command:
+                    restart.build_image("/usr/bin/docker", no_cache=False)
 
-        self.assertEqual(1, exc.exception.code)
-        self.assertIn("missing required dependencies before restart", stderr.getvalue())
-        self.assertIn("`pnpm`: missing", stderr.getvalue())
-        self.assertIn("`go`: missing", stderr.getvalue())
+        command = run_command.call_args.args[0]
+        self.assertNotIn("--no-cache", command)
 
 
 class RunCommandTest(unittest.TestCase):
     def test_run_command_surfaces_child_output_before_exiting(self):
-        command = ["go", "build", "./cmd/server"]
-        completed = restart.subprocess.CompletedProcess(
-            command,
-            1,
-            stdout="compile output\n",
-            stderr="compile error\n",
-        )
+        command = ["docker", "build", "."]
+        result = completed(returncode=1, stdout="build output\n", stderr="build error\n")
 
-        with mock.patch.object(restart.subprocess, "run", return_value=completed) as run_cmd:
+        with mock.patch.object(restart.subprocess, "run", return_value=result) as run_cmd:
             stdout = io.StringIO()
             stderr = io.StringIO()
             with contextlib.redirect_stdout(stdout):
                 with contextlib.redirect_stderr(stderr):
                     with self.assertRaises(SystemExit) as exc:
-                        restart.run_command(command, Path("/tmp/backend"))
+                        restart.run_command(command)
 
         self.assertEqual(1, exc.exception.code)
         run_cmd.assert_called_once()
-        self.assertIn("compile output", stdout.getvalue())
-        self.assertIn("compile error", stderr.getvalue())
+        self.assertIn("build output", stdout.getvalue())
+        self.assertIn("build error", stderr.getvalue())
         self.assertIn("command failed with exit code 1", stderr.getvalue())
-        self.assertIn("go build ./cmd/server", stderr.getvalue())
 
 
-class BuildBackendTest(unittest.TestCase):
-    def test_build_backend_fails_early_when_embedded_frontend_assets_are_missing(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            runtime_bin = Path(tmpdir) / ".hermes-proxy-runtime" / "hermes-proxy"
-            missing_dist_dir = Path(tmpdir) / "backend" / "internal" / "web" / "dist"
-            missing_index = missing_dist_dir / "index.html"
+class HealthCheckTest(unittest.TestCase):
+    @staticmethod
+    def _urlopen_cm(code, body):
+        response = mock.MagicMock()
+        response.getcode.return_value = code
+        response.read.return_value = body
+        context = mock.MagicMock()
+        context.__enter__.return_value = response
+        return context
 
-            with mock.patch.object(restart, "EMBED_FRONTEND_DIST_DIR", missing_dist_dir):
-                with mock.patch.object(restart, "EMBED_FRONTEND_INDEX_HTML", missing_index):
-                    with mock.patch.object(restart, "run_command") as run_command:
-                        stderr = io.StringIO()
-                        with contextlib.redirect_stderr(stderr):
-                            with self.assertRaises(SystemExit) as exc:
-                                restart.build_backend("/mock/go", runtime_bin)
+    def test_health_check_ok_on_200(self):
+        with mock.patch.object(
+            restart.urllib.request, "urlopen", return_value=self._urlopen_cm(200, b'{"status":"ok"}')
+        ):
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                restart.health_check("0.0.0.0", "8080")
+        self.assertIn("health OK", stdout.getvalue())
 
+    def test_health_check_fails_on_non_200(self):
+        with mock.patch.object(restart.urllib.request, "urlopen", return_value=self._urlopen_cm(503, b"down")):
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as exc:
+                    restart.health_check("127.0.0.1", "8080")
         self.assertEqual(1, exc.exception.code)
-        run_command.assert_not_called()
-        self.assertIn("embedded frontend assets", stderr.getvalue())
-        self.assertIn(str(missing_index), stderr.getvalue())
+        self.assertIn("HTTP 503", stderr.getvalue())
+
+    def test_health_check_fails_on_connection_error(self):
+        with mock.patch.object(restart.urllib.request, "urlopen", side_effect=OSError("refused")):
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as exc:
+                    restart.health_check("127.0.0.1", "8080")
+        self.assertEqual(1, exc.exception.code)
+        self.assertIn("health check failed", stderr.getvalue())
 
 
-class EnsureRuntimeServicesTest(unittest.TestCase):
-    def test_build_local_database_guard_issue_reports_more_complete_alternative_port(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            config_path = app_dir / "config.yaml"
-            config_path.write_text(
-                "\n".join(
-                    [
-                        "database:",
-                        "    host: 127.0.0.1",
-                        "    port: 5433",
-                        "    user: hermes-proxy",
-                        "    password: secret",
-                        "    dbname: hermes-proxy",
-                    ]
-                ),
-                encoding="utf-8",
-            )
+class MainFlowTest(unittest.TestCase):
+    def test_main_builds_then_deploys(self):
+        with mock.patch.object(restart, "parse_args", return_value=make_args(restart_only=False)):
+            with mock.patch.object(restart, "resolve_docker_bin", return_value="/usr/bin/docker"):
+                with mock.patch.object(restart, "ensure_preflight_ready"):
+                    with mock.patch.object(restart, "build_image") as build_image:
+                        with mock.patch.object(restart, "compose_up") as compose_up:
+                            with mock.patch.object(restart, "compose_ps"):
+                                with mock.patch.object(restart, "read_env_value", side_effect=["127.0.0.1", "8080"]):
+                                    with mock.patch.object(restart, "health_check") as health_check:
+                                        restart.main()
 
-            with mock.patch.object(restart, "resolve_psql_bin", return_value="/mock/psql"):
-                with mock.patch.object(restart, "read_local_database_counts") as read_counts:
-                    read_counts.side_effect = [
-                        {"users": 1, "accounts": 0, "api_keys": 0},
-                        {"users": 1, "accounts": 369, "api_keys": 1},
-                    ]
-                    issue = restart.build_local_database_guard_issue(config_path)
+        build_image.assert_called_once()
+        compose_up.assert_called_once()
+        health_check.assert_called_once()
 
-        self.assertIn("5433", issue)
-        self.assertIn("5432", issue)
-        self.assertIn("accounts=369", issue)
+    def test_main_restart_only_skips_build(self):
+        with mock.patch.object(restart, "parse_args", return_value=make_args(restart_only=True)):
+            with mock.patch.object(restart, "resolve_docker_bin", return_value="/usr/bin/docker"):
+                with mock.patch.object(restart, "ensure_preflight_ready"):
+                    with mock.patch.object(restart, "build_image") as build_image:
+                        with mock.patch.object(restart, "compose_up") as compose_up:
+                            with mock.patch.object(restart, "compose_ps"):
+                                with mock.patch.object(restart, "read_env_value", side_effect=["127.0.0.1", "8080"]):
+                                    with mock.patch.object(restart, "health_check"):
+                                        restart.main()
 
-    def test_ensure_runtime_services_starts_local_postgres_and_redis(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            config_path = app_dir / "config.yaml"
-            config_path.write_text(
-                "\n".join(
-                    [
-                        "database:",
-                        "    host: 127.0.0.1",
-                        "    port: 5432",
-                        "    user: hermes-proxy",
-                        "    password: hermes-proxy",
-                        "    dbname: hermes-proxy",
-                        "redis:",
-                        "    host: 127.0.0.1",
-                        "    port: 6379",
-                    ]
-                ),
-                encoding="utf-8",
-            )
-
-            with mock.patch.object(restart, "ensure_local_postgres_running") as ensure_postgres:
-                with mock.patch.object(restart, "ensure_local_redis_running") as ensure_redis:
-                    with mock.patch.object(restart, "build_local_database_guard_issue", return_value=None):
-                        restart.ensure_runtime_services(app_dir, config_path)
-
-        ensure_postgres.assert_called_once_with(app_dir, config_path)
-        ensure_redis.assert_called_once_with(app_dir, config_path)
-
-    def test_ensure_runtime_services_skips_managed_postgres_when_disabled_in_config(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            config_path = app_dir / "config.yaml"
-            config_path.write_text(
-                "\n".join(
-                    [
-                        "database:",
-                        "    host: 127.0.0.1",
-                        "    port: 5432",
-                        "    user: hermes-proxy",
-                        "    password: hermes-proxy",
-                        "    dbname: hermes-proxy",
-                        "    managed_by_runtime: false",
-                        "redis:",
-                        "    host: 127.0.0.1",
-                        "    port: 6379",
-                    ]
-                ),
-                encoding="utf-8",
-            )
-
-            with mock.patch.object(restart, "is_tcp_port_open", return_value=True):
-                with mock.patch.object(restart, "ensure_local_postgres_running") as ensure_postgres:
-                    with mock.patch.object(restart, "ensure_local_redis_running") as ensure_redis:
-                        with mock.patch.object(restart, "build_local_database_guard_issue", return_value=None):
-                            restart.ensure_runtime_services(app_dir, config_path)
-
-        ensure_postgres.assert_not_called()
-        ensure_redis.assert_called_once_with(app_dir, config_path)
-
-    def test_ensure_local_redis_running_starts_repo_scoped_server(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            config_path = app_dir / "config.yaml"
-            config_path.write_text(
-                "\n".join(
-                    [
-                        "redis:",
-                        "    host: 127.0.0.1",
-                        "    port: 6379",
-                        "    password: secret",
-                    ]
-                ),
-                encoding="utf-8",
-            )
-
-            with mock.patch.object(restart, "is_tcp_port_open", return_value=False):
-                with mock.patch.object(restart, "resolve_redis_server_bin", return_value="/mock/redis-server"):
-                    with mock.patch.object(restart, "start_detached_process") as start_detached_process:
-                        with mock.patch.object(restart, "wait_until_listening") as wait_until_listening:
-                            restart.ensure_local_redis_running(app_dir, config_path)
-
-        command = start_detached_process.call_args.args[0]
-        self.assertEqual("/mock/redis-server", command[0])
-        self.assertIn("--port", command)
-        self.assertIn("6379", command)
-        self.assertIn("--dir", command)
-        self.assertIn(str((app_dir / "redis").resolve()), command)
-        self.assertIn("--requirepass", command)
-        self.assertIn("secret", command)
-        wait_until_listening.assert_called_once_with("127.0.0.1", 6379)
-
-    def test_ensure_local_postgres_running_initializes_cluster_and_bootstraps_database(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            app_dir = Path(tmpdir)
-            config_path = app_dir / "config.yaml"
-            config_path.write_text(
-                "\n".join(
-                    [
-                        "database:",
-                        "    host: 127.0.0.1",
-                        "    port: 5432",
-                        "    user: hermes-proxy",
-                        "    password: secret",
-                        "    dbname: hermes-proxy",
-                    ]
-                ),
-                encoding="utf-8",
-            )
-
-            with mock.patch.object(restart, "is_tcp_port_open", return_value=False):
-                with mock.patch.object(restart, "resolve_pg_ctl_bin", return_value="/mock/pg_ctl"):
-                    with mock.patch.object(restart, "resolve_initdb_bin", return_value="/mock/initdb"):
-                        with mock.patch.object(restart, "resolve_psql_bin", return_value="/mock/psql"):
-                            with mock.patch.object(restart.subprocess, "run") as run_cmd:
-                                with mock.patch.object(restart, "wait_until_postgres_ready") as wait_ready:
-                                    with mock.patch.object(restart, "bootstrap_local_postgres_database") as bootstrap_db:
-                                        restart.ensure_local_postgres_running(app_dir, config_path)
-
-        first_command = run_cmd.call_args_list[0].args[0]
-        second_command = run_cmd.call_args_list[1].args[0]
-        self.assertEqual("/mock/initdb", first_command[0])
-        self.assertIn(str((app_dir / "postgres").resolve()), first_command)
-        self.assertEqual("/mock/pg_ctl", second_command[0])
-        self.assertIn("start", second_command)
-        wait_ready.assert_called_once_with("/mock/psql", "127.0.0.1", 5432, "hermes-proxy", "secret", "hermes-proxy")
-        bootstrap_db.assert_called_once_with(
-            "/mock/psql",
-            "127.0.0.1",
-            5432,
-            "hermes-proxy",
-            "secret",
-            "hermes-proxy",
-        )
+        build_image.assert_not_called()
+        compose_up.assert_called_once()
 
 
 if __name__ == "__main__":

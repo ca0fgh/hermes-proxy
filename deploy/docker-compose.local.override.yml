@@ -1,0 +1,28 @@
+# =============================================================================
+# LOCAL override for docker-compose.local.yml  (2026-05-27 migration)
+# =============================================================================
+# Why: this host cannot reach Docker Hub (auth.docker.io TLS timeout), but it
+# already has postgres:latest (18.3) and redis:latest (8.x) cached locally.
+# We substitute those tags so the stack starts without a registry pull.
+#
+#  - postgres 18.3 restores the 18.4 dump fine (same major, logical restore).
+#  - A loopback-only port map (5433) lets the host's matching pg_dump/pg_restore
+#    (Postgres.app 18.4) load the dump into the container DB.
+#
+# Usage:
+#   docker compose -f docker-compose.local.yml -f docker-compose.local.override.yml up -d
+# =============================================================================
+
+# Unify the Compose project (group) name with the container names. Without this,
+# Compose defaults the project name to the directory ("deploy"), which shows up
+# as a mismatched group label next to the hermes-proxy* containers.
+name: hermes-proxy
+
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  redis:
+    image: redis:latest
