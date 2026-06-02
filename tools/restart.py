@@ -6,7 +6,7 @@ docker-compose stack.
 This replaces the former native-binary flow (build a Go binary, auto-start host
 PostgreSQL/Redis, run the binary). Instead it:
 
-  1. builds the Docker image `ca0fgh/hermes-proxy:latest` from the repo, and
+  1. builds the Docker image `hermes-proxy-local:latest` from the repo, and
   2. brings up the docker-compose stack defined under `deploy/`
      (`docker-compose.local.yml` + `docker-compose.local.override.yml`,
      project name `hermes-proxy`) waiting until containers are healthy.
@@ -38,7 +38,7 @@ ENV_FILE = DEPLOY_DIR / ".env"
 # loopback postgres port. Keep this in sync with the deploy/ directory.
 COMPOSE_FILES = ("docker-compose.local.yml", "docker-compose.local.override.yml")
 PROJECT_NAME = "hermes-proxy"
-IMAGE_TAG = "ca0fgh/hermes-proxy:latest"
+IMAGE_TAG = "hermes-proxy-local:latest"
 DEFAULT_WAIT_TIMEOUT = 180
 HEALTH_PATH = "/health"
 

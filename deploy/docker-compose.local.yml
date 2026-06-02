@@ -24,7 +24,7 @@ services:
   # hermes-proxy Application
   # ===========================================================================
   hermes-proxy:
-    image: ca0fgh/hermes-proxy:latest
+    image: hermes-proxy-local:latest
     container_name: hermes-proxy
     restart: unless-stopped
     ulimits:
