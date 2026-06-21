@@ -170,7 +170,7 @@ docker compose -f docker-compose.local.yml down
 # View logs
 docker compose -f docker-compose.local.yml logs -f hermes-proxy
 
-# Restart Sub2API only
+# Restart hermes-proxy only
 docker compose -f docker-compose.local.yml restart hermes-proxy
 
 # Update to latest version
@@ -194,7 +194,7 @@ docker compose down
 # View logs
 docker compose logs -f hermes-proxy
 
-# Restart Sub2API only
+# Restart hermes-proxy only
 docker compose restart hermes-proxy
 
 # Update to latest version

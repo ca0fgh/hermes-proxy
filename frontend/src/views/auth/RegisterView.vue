@@ -330,7 +330,9 @@ import {
 import type { LoginAgreementDocument } from '@/types'
 
 const { t, locale } = useI18n()
-const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
+const LOGIN_AGREEMENT_STORAGE_KEY = 'hermes_proxy_login_agreement_consent'
+// 兼容历史键：老用户的同意记录仍以旧键存储，读取时回退、拒绝时一并清除，避免重新弹条款
+const LEGACY_LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
 
 // ==================== Router & Stores ====================
 
@@ -538,7 +540,9 @@ function hasAcceptedLoginAgreement(revision: string): boolean {
     return false
   }
   try {
-    const raw = localStorage.getItem(LOGIN_AGREEMENT_STORAGE_KEY)
+    const raw =
+      localStorage.getItem(LOGIN_AGREEMENT_STORAGE_KEY) ??
+      localStorage.getItem(LEGACY_LOGIN_AGREEMENT_STORAGE_KEY)
     if (!raw) {
       return false
     }
@@ -565,6 +569,7 @@ function acceptLoginAgreement(): void {
 
 function rejectLoginAgreement(): void {
   localStorage.removeItem(LOGIN_AGREEMENT_STORAGE_KEY)
+  localStorage.removeItem(LEGACY_LOGIN_AGREEMENT_STORAGE_KEY)
   agreementAccepted.value = false
   showAgreementModal.value = false
   appStore.showWarning('未同意最新条款前，无法注册或使用快捷登录。')

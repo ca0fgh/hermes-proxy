@@ -277,6 +277,7 @@ func RegisterPageRoutes(v1 *gin.RouterGroup, dataDir string, jwtAuth gin.Handler
 	// Admin-only: list all available pages
 	adminPages := v1.Group("/pages")
 	adminPages.Use(adminAuth)
+	// 合规法务门禁已在本 fork 停用(见 service.GetAdminComplianceStatus)
 	{
 		adminPages.GET("", h.ListPages)
 	}

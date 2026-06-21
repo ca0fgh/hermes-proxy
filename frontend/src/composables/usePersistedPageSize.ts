@@ -1,12 +1,15 @@
 import { getConfiguredTableDefaultPageSize, normalizeTablePageSize } from '@/utils/tablePreferences'
 
 const STORAGE_KEY = 'table-page-size'
+const STORAGE_SOURCE_KEY = 'table-page-size-source'
 
 export function getPersistedPageSize(fallback = getConfiguredTableDefaultPageSize()): number {
   if (typeof window !== 'undefined') {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY)
-      if (stored !== null) {
+      const source = window.localStorage.getItem(STORAGE_SOURCE_KEY)
+      // 用户手动选择的旧值不得压过系统新下发的表格默认页大小
+      if (stored !== null && source !== 'user') {
         const parsed = Number(stored)
         if (Number.isFinite(parsed)) {
           return normalizeTablePageSize(parsed)

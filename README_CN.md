@@ -8,30 +8,15 @@
 [![Redis](https://img.shields.io/badge/Redis-7+-DC382D.svg)](https://redis.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://www.docker.com/)
 
-<a href="https://trendshift.io/repositories/21823" target="_blank"><img src="https://trendshift.io/api/badge/repositories/21823" alt="Wei-Shaw%2Fsub2api | Trendshift" width="250" height="55"/></a>
-
 **AI API 网关平台 - 订阅配额分发管理**
 
 [English](README.md) | 中文 | [日本語](README_JA.md)
 
 </div>
 
-> **Sub2API 官方仅使用  `sub2api.org` 与 `pincc.ai` 两个域名。其他使用 Sub2API 名义的网站可能为第三方部署或服务，与本项目无关，请自行甄别。**
----
-
-## 在线体验
-
-体验地址：**[https://demo.sub2api.org/](https://demo.sub2api.org/)**
-
-演示账号（共享演示环境；自建部署不会自动创建该账号）：
-
-| 邮箱 | 密码 |
-|------|------|
-| admin@sub2api.org | admin123 |
-
 ## 项目概述
 
-Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的 API 配额。用户通过平台生成的 API Key 调用上游 AI 服务，平台负责鉴权、计费、负载均衡和请求转发。
+hermes-proxy 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的 API 配额。用户通过平台生成的 API Key 调用上游 AI 服务，平台负责鉴权、计费、负载均衡和请求转发。
 
 ## 核心功能
 
@@ -43,24 +28,6 @@ Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的
 - **速率限制** - 可配置的请求和 Token 速率限制
 - **管理后台** - Web 界面进行监控和管理
 - **外部系统集成** - 支持通过 iframe 嵌入外部系统（如支付、工单等），扩展管理后台功能
-
-## 不想自建？试试官方中转
-
-<table>
-<tr>
-<td width="180" align="center" valign="middle"><a href="https://shop.pincc.ai/"><img src="assets/partners/logos/pincc-logo.png" alt="pincc" width="120"></a></td>
-<td valign="middle"><b><a href="https://shop.pincc.ai/">PinCC</a></b> 是基于 Sub2API 搭建的官方中转服务，提供 Claude Code、Codex、Gemini 等主流模型的稳定中转，开箱即用，免去自建部署与运维烦恼。</td>
-</tr>
-</table>
-
-## 生态项目
-
-围绕 hermes-proxy 的社区扩展与集成项目：
-
-| 项目 | 说明 | 功能 |
-|------|------|------|
-| hermes-proxyPay | 自助支付系统 | 用户自助充值、自助订阅购买；兼容易支付协议、微信官方支付、支付宝官方支付、Stripe；支持 iframe 嵌入管理后台 |
-| [hermes-proxy-mobile](https://github.com/ckken/hermes-proxy-mobile) | 移动端管理控制台 | 跨平台应用（iOS/Android/Web），支持用户管理、账号管理、监控看板、多后端切换；基于 Expo + React Native 构建 |
 
 ## 技术栈
 
@@ -75,7 +42,7 @@ Sub2API 是一个 AI API 网关平台，用于分发和管理 AI 产品订阅的
 
 ## Nginx 反向代理注意事项
 
-通过 Nginx 反向代理 Sub2API（或 CRS 服务）并搭配 Codex CLI 使用时，需要在 Nginx 配置的 `http` 块中添加：
+通过 Nginx 反向代理 hermes-proxy（或 CRS 服务）并搭配 Codex CLI 使用时，需要在 Nginx 配置的 `http` 块中添加：
 
 ```nginx
 underscores_in_headers on;
@@ -180,7 +147,7 @@ curl -sSL https://raw.githubusercontent.com/ca0fgh/hermes-proxy/main/deploy/dock
 docker compose up -d
 
 # 查看日志
-docker compose logs -f sub2api
+docker compose logs -f hermes-proxy
 ```
 
 **脚本功能：**
@@ -253,7 +220,7 @@ docker compose up -d
 docker compose -f docker-compose.local.yml ps
 
 # 7. 查看日志
-docker compose -f docker-compose.local.yml logs -f sub2api
+docker compose -f docker-compose.local.yml logs -f hermes-proxy
 ```
 
 #### 部署版本对比
@@ -283,7 +250,7 @@ docker compose -f docker-compose.local.yml logs -f sub2api
 
 如果管理员密码是自动生成的，在日志中查找：
 ```bash
-docker compose -f docker-compose.local.yml logs sub2api | grep "admin password"
+docker compose -f docker-compose.local.yml logs hermes-proxy | grep "admin password"
 ```
 
 #### 升级
@@ -308,8 +275,8 @@ tar czf hermes-proxy-complete.tar.gz hermes-proxy-deploy/
 scp hermes-proxy-complete.tar.gz user@new-server:/path/
 
 # 新服务器
-tar xzf sub2api-complete.tar.gz
-cd sub2api-deploy/
+tar xzf hermes-proxy-complete.tar.gz
+cd hermes-proxy-deploy/
 docker compose -f docker-compose.local.yml up -d
 ```
 

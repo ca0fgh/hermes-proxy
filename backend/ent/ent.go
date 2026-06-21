@@ -45,6 +45,7 @@ import (
 	"github.com/ca0fgh/hermes-proxy/ent/userallowedgroup"
 	"github.com/ca0fgh/hermes-proxy/ent/userattributedefinition"
 	"github.com/ca0fgh/hermes-proxy/ent/userattributevalue"
+	"github.com/ca0fgh/hermes-proxy/ent/userplatformquota"
 	"github.com/ca0fgh/hermes-proxy/ent/usersubscription"
 )
 
@@ -139,6 +140,7 @@ func checkColumn(t, c string) error {
 			userallowedgroup.Table:              userallowedgroup.ValidColumn,
 			userattributedefinition.Table:       userattributedefinition.ValidColumn,
 			userattributevalue.Table:            userattributevalue.ValidColumn,
+			userplatformquota.Table:             userplatformquota.ValidColumn,
 			usersubscription.Table:              usersubscription.ValidColumn,
 		})
 	})
