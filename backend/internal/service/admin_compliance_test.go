@@ -59,7 +59,8 @@ func TestAdminComplianceStatusRequiresAckWhenMissing(t *testing.T) {
 
 	status, err := svc.GetAdminComplianceStatus(context.Background(), 1)
 	require.NoError(t, err)
-	require.True(t, status.Required)
+	// 合规法务门禁已在本 fork 停用:即便从未确认也恒返回 Required=false。
+	require.False(t, status.Required)
 	require.Equal(t, AdminComplianceVersion, status.Version)
 	require.Equal(t, AdminComplianceAckPhraseZH, status.AckPhraseZH)
 	require.Equal(t, AdminComplianceDocumentPathZH, status.DocumentPathZH)
@@ -109,7 +110,8 @@ func TestAdminComplianceStatusRequiresAckOnOldVersion(t *testing.T) {
 
 	status, err := svc.GetAdminComplianceStatus(context.Background(), 1)
 	require.NoError(t, err)
-	require.True(t, status.Required)
+	// 门禁停用:旧版本确认不再触发 Required=true(仅 Acknowledgement 因版本不匹配保持 nil)。
+	require.False(t, status.Required)
 	require.Nil(t, status.Acknowledgement)
 }
 
@@ -129,5 +131,6 @@ func TestAdminComplianceStatusIsPerAdminUser(t *testing.T) {
 
 	statusForUserTwo, err := svc.GetAdminComplianceStatus(context.Background(), 2)
 	require.NoError(t, err)
-	require.True(t, statusForUserTwo.Required)
+	// 门禁停用:未确认的 admin 同样恒返回 Required=false。
+	require.False(t, statusForUserTwo.Required)
 }

@@ -724,3 +724,11 @@ func TestExtractSoraFailoverHeaderInsights(t *testing.T) {
 	require.Equal(t, "challenge", mitigated)
 	require.Equal(t, "text/html", contentType)
 }
+
+func (r *stubAccountRepo) ListOAuthRefreshCandidates(context.Context) ([]service.Account, error) {
+	return nil, nil
+}
+
+func (r *stubAccountRepo) RevertProxyFallback(context.Context, int64) error {
+	return nil
+}

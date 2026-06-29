@@ -879,3 +879,11 @@ func TestResolveMediaURLs_S3_MultiKey_ErrorOnSecond(t *testing.T) {
 	err := svc.ResolveMediaURLs(context.Background(), gen)
 	require.Error(t, err) // 第一个 key 的 GetAccessURL 就会失败
 }
+
+func (r *stubUserRepoForQuota) BatchAddConcurrency(context.Context, []int64, int) (int, error) {
+	return 0, nil
+}
+
+func (r *stubUserRepoForQuota) BatchSetConcurrency(context.Context, []int64, int) (int, error) {
+	return 0, nil
+}

@@ -3176,3 +3176,23 @@ func TestCancelGeneration_AlreadyCompleted(t *testing.T) {
 	h.CancelGeneration(c)
 	require.Equal(t, http.StatusConflict, rec.Code)
 }
+
+func (r *stubUserRepoForHandler) BatchAddConcurrency(context.Context, []int64, int) (int, error) {
+	return 0, nil
+}
+
+func (r *stubAPIKeyRepoForHandler) DeleteWithAudit(context.Context, int64) error {
+	return nil
+}
+
+func (r *stubAccountRepoForHandler) ListOAuthRefreshCandidates(context.Context) ([]service.Account, error) {
+	return nil, nil
+}
+
+func (r *stubUserRepoForHandler) BatchSetConcurrency(context.Context, []int64, int) (int, error) {
+	return 0, nil
+}
+
+func (r *stubAccountRepoForHandler) RevertProxyFallback(context.Context, int64) error {
+	return nil
+}

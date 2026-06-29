@@ -5,6 +5,7 @@ const path = require("path");
 
 const BASE_URL = (process.env.HERMES_PROXY_BASE_URL || "").replace(/\/$/, "");
 const ADMIN_API_KEY = process.env.HERMES_PROXY_ADMIN_API_KEY || "";
+const ADMIN_JWT = process.env.HERMES_PROXY_JWT || "";
 
 function usage() {
   console.log(`Usage:
@@ -91,7 +92,8 @@ function parseArgs(argv) {
 function authHeaders() {
   if (!BASE_URL) throw new Error("Missing HERMES_PROXY_BASE_URL");
   if (ADMIN_API_KEY) return { "x-api-key": ADMIN_API_KEY };
-  throw new Error("Missing HERMES_PROXY_ADMIN_API_KEY");
+  if (ADMIN_JWT) return { Authorization: `Bearer ${ADMIN_JWT}` };
+  throw new Error("Missing HERMES_PROXY_ADMIN_API_KEY or HERMES_PROXY_JWT");
 }
 
 async function apiRequest(method, pathname, body, extraHeaders = {}) {

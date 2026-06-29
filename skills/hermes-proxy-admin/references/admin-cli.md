@@ -5,9 +5,17 @@
 ```bash
 export HERMES_PROXY_BASE_URL='https://your-hermes-proxy-host'
 export HERMES_PROXY_ADMIN_API_KEY='<admin api key>'
+# 或者，未配置管理员 API Key 时使用管理员 JWT：
+# export HERMES_PROXY_JWT='<admin access_token>'
 ```
 
-后台鉴权只使用 `x-api-key`。如果返回 `INVALID_ADMIN_KEY`，重新生成管理员 API Key。
+后台鉴权优先使用 `HERMES_PROXY_ADMIN_API_KEY` 发送 `x-api-key`，未设置时使用 `HERMES_PROXY_JWT` 发送 `Authorization: Bearer <jwt>`。如果返回 `INVALID_ADMIN_KEY`，重新生成管理员 API Key；如果使用 JWT，先用管理员邮箱密码登录并从响应的 `data.access_token` 复制 token：
+
+```bash
+curl -sS "$HERMES_PROXY_BASE_URL/api/v1/auth/login" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"your-password"}'
+```
 
 ## CLI
 
