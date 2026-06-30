@@ -16,7 +16,6 @@ import (
 )
 
 func TestOpenAIGatewayServiceForward_RejectsDisabledImageGenerationIntents(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
 		name string
@@ -55,7 +54,6 @@ func TestOpenAIGatewayServiceForward_RejectsDisabledImageGenerationIntents(t *te
 }
 
 func TestOpenAIGatewayServiceForward_DisabledGroupAllowsTextOnlyResponses(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	upstream := &httpUpstreamRecorder{
 		resp: &http.Response{
@@ -80,7 +78,6 @@ func TestOpenAIGatewayServiceForward_DisabledGroupAllowsTextOnlyResponses(t *tes
 }
 
 func TestOpenAIGatewayServiceForward_CodexImageInjectionRespectsGroupCapability(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
 		name          string
@@ -126,7 +123,6 @@ func TestOpenAIGatewayServiceForward_CodexImageInjectionRespectsGroupCapability(
 }
 
 func TestOpenAIGatewayServiceForward_ExplicitImageToolWorksWithBridgeDisabled(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	upstream := &httpUpstreamRecorder{
 		resp: &http.Response{
@@ -153,7 +149,6 @@ func TestOpenAIGatewayServiceForward_ExplicitImageToolWorksWithBridgeDisabled(t 
 }
 
 func TestOpenAIGatewayServiceForward_ChannelBridgeOverrideEnablesCodexInjection(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	upstream := &httpUpstreamRecorder{
 		resp: &http.Response{
@@ -186,7 +181,6 @@ func TestOpenAIGatewayServiceForward_ChannelBridgeOverrideEnablesCodexInjection(
 }
 
 func TestOpenAIGatewayServiceForward_CodexBridgePreservesExistingToolChoice(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	upstream := &httpUpstreamRecorder{
 		resp: &http.Response{
@@ -298,7 +292,6 @@ func TestOpenAIGatewayService_CodexImageGenerationBridgeOverridePrecedence(t *te
 }
 
 func TestOpenAIGatewayServiceHandleResponsesImageOutputs_NonStreaming(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	svc := newOpenAIImageGenerationControlTestService(&httpUpstreamRecorder{})
 	c, _ := newOpenAIImageGenerationControlTestContext(true, "unit-test-agent/1.0")
@@ -325,7 +318,6 @@ func TestOpenAIGatewayServiceHandleResponsesImageOutputs_NonStreaming(t *testing
 }
 
 func TestOpenAIGatewayServiceHandleResponsesImageOutputs_Streaming(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	svc := newOpenAIImageGenerationControlTestService(&httpUpstreamRecorder{})
 	c, _ := newOpenAIImageGenerationControlTestContext(true, "unit-test-agent/1.0")
@@ -354,7 +346,6 @@ func TestOpenAIGatewayServiceHandleResponsesImageOutputs_Streaming(t *testing.T)
 // 必须在打 cyber 标记前被解析进 mark；否则计费走 mark.UpstreamInTok 会按 0 token
 // 漏记真实用量（该路径返回错误，handler 仅经 RecordCyberPolicyUsageLog 计费）。
 func TestHandleStreamingResponse_CyberPolicyCapturesRealUpstreamTokens(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	svc := newOpenAIImageGenerationControlTestService(&httpUpstreamRecorder{})
 	c, _ := newOpenAIImageGenerationControlTestContext(false, "unit-test-agent/1.0")

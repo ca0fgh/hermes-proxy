@@ -57,7 +57,6 @@ type systemUpdateErrorEnvelope struct {
 
 func newSystemHandlerTestRouter(t *testing.T, updateSvc *systemHandlerUpdateServiceStub, repo *memoryIdempotencyRepoStub) *gin.Engine {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 	service.SetDefaultIdempotencyCoordinator(nil)
 	t.Cleanup(func() {
 		service.SetDefaultIdempotencyCoordinator(nil)

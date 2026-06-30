@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -24,7 +25,6 @@ import (
 )
 
 func init() {
-	gin.SetMode(gin.TestMode)
 }
 
 // ==================== Stub: SoraGenerationRepository ====================
@@ -32,6 +32,7 @@ func init() {
 var _ service.SoraGenerationRepository = (*stubSoraGenRepo)(nil)
 
 type stubSoraGenRepo struct {
+	mu         sync.Mutex
 	gens       map[int64]*service.SoraGeneration
 	nextID     int64
 	createErr  error
@@ -57,6 +58,8 @@ func newStubSoraGenRepo() *stubSoraGenRepo {
 }
 
 func (r *stubSoraGenRepo) Create(_ context.Context, gen *service.SoraGeneration) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.createErr != nil {
 		return r.createErr
 	}
@@ -66,6 +69,8 @@ func (r *stubSoraGenRepo) Create(_ context.Context, gen *service.SoraGeneration)
 	return nil
 }
 func (r *stubSoraGenRepo) GetByID(_ context.Context, id int64) (*service.SoraGeneration, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.getErr != nil {
 		return nil, r.getErr
 	}
@@ -73,18 +78,22 @@ func (r *stubSoraGenRepo) GetByID(_ context.Context, id int64) (*service.SoraGen
 	if !ok {
 		return nil, fmt.Errorf("not found")
 	}
+	// 返回值拷贝（镜像真实 DB repo 每次返回独立行）：后台 processGeneration goroutine 经
+	// MarkGenerating 修改的是该副本，绝不与请求处理 goroutine 在 Generate 里读到的
+	// CreatePending 原始指针产生数据竞争；生产 service 改完总会 Update 写回，最终态等价。
+	cp := *gen
 	// 条件性状态覆盖：模拟外部取消等场景
 	if r.getByIDOverrideAfterN > 0 {
 		n := atomic.AddInt32(&r.getByIDCallCount, 1)
 		if n > r.getByIDOverrideAfterN {
-			cp := *gen
 			cp.Status = r.getByIDOverrideStatus
-			return &cp, nil
 		}
 	}
-	return gen, nil
+	return &cp, nil
 }
 func (r *stubSoraGenRepo) Update(_ context.Context, gen *service.SoraGeneration) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	// 条件性失败：前 N 次成功，之后失败
 	if r.updateCallCount != nil {
 		n := atomic.AddInt32(r.updateCallCount, 1)
@@ -99,6 +108,8 @@ func (r *stubSoraGenRepo) Update(_ context.Context, gen *service.SoraGeneration)
 	return nil
 }
 func (r *stubSoraGenRepo) Delete(_ context.Context, id int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.deleteErr != nil {
 		return r.deleteErr
 	}
@@ -106,6 +117,8 @@ func (r *stubSoraGenRepo) Delete(_ context.Context, id int64) error {
 	return nil
 }
 func (r *stubSoraGenRepo) List(_ context.Context, params service.SoraGenerationListParams) ([]*service.SoraGeneration, int64, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.listErr != nil {
 		return nil, 0, r.listErr
 	}
@@ -119,10 +132,25 @@ func (r *stubSoraGenRepo) List(_ context.Context, params service.SoraGenerationL
 	return result, int64(len(result)), nil
 }
 func (r *stubSoraGenRepo) CountByUserAndStatus(_ context.Context, _ int64, _ []string) (int64, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.countErr != nil {
 		return 0, r.countErr
 	}
 	return r.countValue, nil
+}
+
+// get 在持锁状态下返回记录的值拷贝，供测试在后台 Generate goroutine 可能仍运行时安全读取
+// （替代直接读 repo.gens[id]，避免与 Update 的 map 写竞争）。
+func (r *stubSoraGenRepo) get(id int64) *service.SoraGeneration {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	gen, ok := r.gens[id]
+	if !ok {
+		return nil
+	}
+	cp := *gen
+	return &cp
 }
 
 // ==================== 辅助函数 ====================
@@ -417,7 +445,7 @@ func TestGenerate_DefaultMediaType(t *testing.T) {
 	c, rec := makeGinContext("POST", "/api/v1/sora/generate", `{"model":"sora2-landscape-10s","prompt":"test"}`, 1)
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.Equal(t, "video", repo.gens[1].MediaType)
+	require.Equal(t, "video", repo.get(1).MediaType)
 }
 
 func TestGenerate_ImageMediaType(t *testing.T) {
@@ -426,7 +454,7 @@ func TestGenerate_ImageMediaType(t *testing.T) {
 	c, rec := makeGinContext("POST", "/api/v1/sora/generate", `{"model":"gpt-image","prompt":"test","media_type":"image"}`, 1)
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.Equal(t, "image", repo.gens[1].MediaType)
+	require.Equal(t, "image", repo.get(1).MediaType)
 }
 
 func TestGenerate_CreatePendingError(t *testing.T) {
@@ -453,8 +481,8 @@ func TestGenerate_APIKeyInContext(t *testing.T) {
 	c.Set("api_key_id", int64(42))
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.NotNil(t, repo.gens[1].APIKeyID)
-	require.Equal(t, int64(42), *repo.gens[1].APIKeyID)
+	require.NotNil(t, repo.get(1).APIKeyID)
+	require.Equal(t, int64(42), *repo.get(1).APIKeyID)
 }
 
 func TestGenerate_NoAPIKeyInContext(t *testing.T) {
@@ -463,7 +491,7 @@ func TestGenerate_NoAPIKeyInContext(t *testing.T) {
 	c, rec := makeGinContext("POST", "/api/v1/sora/generate", `{"model":"sora2-landscape-10s","prompt":"test"}`, 1)
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.Nil(t, repo.gens[1].APIKeyID)
+	require.Nil(t, repo.get(1).APIKeyID)
 }
 
 func TestGenerate_ConcurrencyBoundary(t *testing.T) {
@@ -1093,7 +1121,7 @@ func TestGenerate_WithAPIKeyID_Success(t *testing.T) {
 	require.NotZero(t, data["generation_id"])
 
 	// 验证 api_key_id 已关联到生成记录
-	gen := repo.gens[1]
+	gen := repo.get(1)
 	require.NotNil(t, gen.APIKeyID)
 	require.Equal(t, int64(42), *gen.APIKeyID)
 }
@@ -1210,7 +1238,7 @@ func TestGenerate_WithAPIKeyID_NilAPIKeyService(t *testing.T) {
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
 	// apiKeyService 为 nil → 跳过校验 → api_key_id 不记录
-	require.Nil(t, repo.gens[1].APIKeyID)
+	require.Nil(t, repo.get(1).APIKeyID)
 }
 
 func TestGenerate_WithAPIKeyID_NilGroupID(t *testing.T) {
@@ -1232,8 +1260,8 @@ func TestGenerate_WithAPIKeyID_NilGroupID(t *testing.T) {
 		`{"model":"sora2-landscape-10s","prompt":"test","api_key_id":42}`, 1)
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.NotNil(t, repo.gens[1].APIKeyID)
-	require.Equal(t, int64(42), *repo.gens[1].APIKeyID)
+	require.NotNil(t, repo.get(1).APIKeyID)
+	require.Equal(t, int64(42), *repo.get(1).APIKeyID)
 }
 
 func TestGenerate_NoAPIKeyID_NoContext_NilResult(t *testing.T) {
@@ -1248,7 +1276,7 @@ func TestGenerate_NoAPIKeyID_NoContext_NilResult(t *testing.T) {
 		`{"model":"sora2-landscape-10s","prompt":"test"}`, 1)
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
-	require.Nil(t, repo.gens[1].APIKeyID)
+	require.Nil(t, repo.get(1).APIKeyID)
 }
 
 func TestGenerate_WithAPIKeyIDInBody_OverridesContext(t *testing.T) {
@@ -1273,8 +1301,8 @@ func TestGenerate_WithAPIKeyIDInBody_OverridesContext(t *testing.T) {
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
 	// 应使用 body 中的 api_key_id=42，而不是 context 中的 99
-	require.NotNil(t, repo.gens[1].APIKeyID)
-	require.Equal(t, int64(42), *repo.gens[1].APIKeyID)
+	require.NotNil(t, repo.get(1).APIKeyID)
+	require.Equal(t, int64(42), *repo.get(1).APIKeyID)
 }
 
 func TestGenerate_WithContextAPIKeyID_FallbackPath(t *testing.T) {
@@ -1291,8 +1319,8 @@ func TestGenerate_WithContextAPIKeyID_FallbackPath(t *testing.T) {
 	h.Generate(c)
 	require.Equal(t, http.StatusOK, rec.Code)
 	// 应使用 context 中的 api_key_id=99
-	require.NotNil(t, repo.gens[1].APIKeyID)
-	require.Equal(t, int64(99), *repo.gens[1].APIKeyID)
+	require.NotNil(t, repo.get(1).APIKeyID)
+	require.Equal(t, int64(99), *repo.get(1).APIKeyID)
 }
 
 func TestGenerate_APIKeyID_Zero_IgnoredInJSON(t *testing.T) {
@@ -1632,11 +1660,11 @@ func TestProcessGeneration_MarkGeneratingFails(t *testing.T) {
 
 	// 直接调用（非 goroutine），MarkGenerating 失败 → 早退
 	h.processGeneration(1, 1, nil, "sora2-landscape-10s", "test", "video", "", 1)
-	// MarkGenerating 在调用 repo.Update 前已修改内存对象为 "generating"
-	// repo.Update 返回错误 → processGeneration 早退，不会继续到 MarkFailed
-	// 因此 ErrorMessage 为空（证明未调用 MarkFailed）
-	require.Equal(t, "generating", repo.gens[1].Status)
-	require.Empty(t, repo.gens[1].ErrorMessage)
+	// MarkGenerating 的 repo.Update 返回错误 → processGeneration 早退，不会继续到 MarkFailed。
+	// 深拷贝 stub 镜像真实 DB 语义：失败的 Update 不写回，状态保持 "pending"（旧 stub 因复用
+	// 指针会泄漏未提交的 "generating" mutation，不真实）。ErrorMessage 为空证明未调用 MarkFailed。
+	require.Equal(t, "pending", repo.get(1).Status)
+	require.Empty(t, repo.get(1).ErrorMessage)
 }
 
 func TestProcessGeneration_GatewayServiceNil(t *testing.T) {
@@ -2503,10 +2531,11 @@ func TestProcessGeneration_MarkCompletedFails(t *testing.T) {
 	}
 
 	h.processGeneration(1, 1, nil, "sora2-landscape-10s", "test prompt", "video", "", 1)
-	// MarkCompleted 内部先修改内存对象状态为 completed，然后 Update 失败。
-	// 由于 stub 存储的是指针，内存中的状态已被修改为 completed。
-	// 此测试验证 processGeneration 在 MarkCompleted 失败后提前返回（不调用 AddUsage）。
-	require.Equal(t, "completed", repo.gens[1].Status)
+	// 第 1 次 Update（MarkGenerating）成功 → 状态写入 "generating"；第 2 次（MarkCompleted）失败。
+	// 深拷贝 stub 镜像真实 DB 语义：失败的 Update 不写回，状态停在 "generating"（旧 stub 因复用
+	// 指针会泄漏未提交的 "completed" mutation，不真实）。状态未到 "completed" 即证明 MarkCompleted
+	// 失败后 processGeneration 提前返回（未 panic、未继续到 AddUsage）。
+	require.Equal(t, "generating", repo.get(1).Status)
 }
 
 // ==================== cleanupStoredMedia 直接测试 ====================

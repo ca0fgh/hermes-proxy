@@ -100,7 +100,6 @@ func TestEnqueueOpsErrorLog_EarlyReturnBranches(t *testing.T) {
 }
 
 func TestOpsCaptureWriterPool_ResetOnRelease(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
@@ -120,7 +119,6 @@ func TestOpsCaptureWriterPool_ResetOnRelease(t *testing.T) {
 }
 
 func TestOpsErrorLoggerMiddleware_DoesNotBreakOuterMiddlewares(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	r := gin.New()
 	r.Use(middleware2.Recovery())
@@ -201,7 +199,6 @@ func TestNormalizeOpsErrorType(t *testing.T) {
 
 func TestClassifyOpsNoAvailableAccountsExcludedFromSLA(t *testing.T) {
 	const message = "No available accounts"
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 
@@ -218,7 +215,6 @@ func TestClassifyOpsNoAvailableAccountsExcludedFromSLA(t *testing.T) {
 }
 
 func TestClassifyOpsRoutingCapacityMarkerExcludesMaskedSelectionFailureFromSLA(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 
@@ -355,7 +351,6 @@ func TestClassifyOpsAuthClientErrorsExcludedFromSLA(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
 			rec := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(rec)
 
@@ -610,7 +605,6 @@ func TestClassifyOpsLocalBusinessLimitErrorsExcludedFromSLA(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
 			rec := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(rec)
 
@@ -627,7 +621,6 @@ func TestClassifyOpsLocalBusinessLimitErrorsExcludedFromSLA(t *testing.T) {
 }
 
 func TestClassifyOpsIPRestrictionAccessDeniedExcludedFromSLA(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonIPRestriction)
@@ -643,7 +636,6 @@ func TestClassifyOpsIPRestrictionAccessDeniedExcludedFromSLA(t *testing.T) {
 }
 
 func TestClassifyOpsClientBusinessLimitedMarkerExcludesCustomPolicyDenialFromSLA(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalPolicyDenied)
@@ -659,7 +651,6 @@ func TestClassifyOpsClientBusinessLimitedMarkerExcludesCustomPolicyDenialFromSLA
 }
 
 func TestClassifyOpsOtherErrorsStillCountForSLA(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 
@@ -683,7 +674,6 @@ func TestClassifyOpsUnsupportedModelExcludedFromSLA(t *testing.T) {
 
 	for _, message := range tests {
 		t.Run(message, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
 			rec := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(rec)
 			markOpsRoutingCapacityLimited(c)
@@ -701,7 +691,6 @@ func TestClassifyOpsUnsupportedModelExcludedFromSLA(t *testing.T) {
 }
 
 func TestClassifyOpsUnmarkedNoAvailableTextStillCountsForSLA(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 
@@ -838,7 +827,6 @@ func TestClassifyOpsUpstreamAuthTextStillCountsForSLA(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
 			rec := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(rec)
 			service.SetOpsUpstreamError(c, tt.status, tt.message, "")
@@ -860,7 +848,6 @@ func TestClassifyOpsUpstreamAuthTextStillCountsForSLA(t *testing.T) {
 }
 
 func TestClassifyOpsUpstreamNoAvailableTextStillCountsForSLA(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	service.SetOpsUpstreamError(c, http.StatusServiceUnavailable, "No available accounts", "")
@@ -888,7 +875,6 @@ func TestParseOpsErrorResponsePreservesNestedStringCode(t *testing.T) {
 }
 
 func TestSetOpsEndpointContext_SetsContextKeys(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
@@ -909,7 +895,6 @@ func TestSetOpsEndpointContext_SetsContextKeys(t *testing.T) {
 }
 
 func TestSetOpsEndpointContext_EmptyModelNotStored(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
@@ -933,7 +918,6 @@ func TestSetOpsEndpointContext_NilContext(t *testing.T) {
 }
 
 func TestGetOpsAPIKeyFallsBackToOpsFallbackKey(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 
@@ -960,7 +944,6 @@ func TestGetOpsAPIKeyFallsBackToOpsFallbackKey(t *testing.T) {
 }
 
 func TestGetOpsAPIKeyPrefersPrimaryContextKey(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 

@@ -67,7 +67,6 @@ func (s *dashboardUsageRepoCapture) GetUserSpendingRanking(
 }
 
 func newDashboardRequestTypeTestRouter(repo *dashboardUsageRepoCapture) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	dashboardSvc := service.NewDashboardService(repo, nil, nil, nil)
 	handler := NewDashboardHandler(dashboardSvc, nil)
 	router := gin.New()

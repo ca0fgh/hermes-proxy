@@ -15,7 +15,6 @@ import (
 )
 
 func TestUserHandlerListIncludesActivityFieldsAndSortParams(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	lastLoginAt := time.Date(2026, 4, 20, 8, 0, 0, 0, time.UTC)
 	lastActiveAt := lastLoginAt.Add(30 * time.Minute)
@@ -69,7 +68,6 @@ func TestUserHandlerListIncludesActivityFieldsAndSortParams(t *testing.T) {
 }
 
 func TestUserHandlerGetByIDIncludesActivityFields(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	lastLoginAt := time.Date(2026, 4, 20, 8, 0, 0, 0, time.UTC)
 	lastActiveAt := lastLoginAt.Add(30 * time.Minute)

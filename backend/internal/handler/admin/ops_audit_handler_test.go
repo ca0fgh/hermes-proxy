@@ -13,7 +13,6 @@ import (
 )
 
 func newOpsAuditTestRouter(handler *OpsHandler) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.GET("/audit-events", handler.ListAuditEvents)
 	r.GET("/audit-events/:id", handler.GetAuditEvent)

@@ -12,7 +12,6 @@ import (
 
 // cyber mark 存在时，中间件必须跳过自身落库（由 recordCyberPolicyIfMarked 统一落 403）。
 func TestOpsErrorLoggerMiddlewareSkipsCyber(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
 	service.MarkOpsCyberPolicy(c, service.CyberPolicyMark{Code: "cyber_policy", Message: "blocked", UpstreamStatus: http.StatusOK})

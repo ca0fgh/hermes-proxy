@@ -23,7 +23,6 @@ func (s *listUsersFilterStub) ListUsers(_ context.Context, _, _ int, filters ser
 }
 
 func TestAdminUserList_ParsesAPIKeyGroupID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	cases := []struct {
 		name  string
 		query string

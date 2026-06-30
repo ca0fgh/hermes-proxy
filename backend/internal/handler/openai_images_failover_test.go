@@ -85,7 +85,6 @@ func (u *openAIImagesFailoverHTTPUpstream) calls() []int64 {
 }
 
 func TestOpenAIGatewayHandlerImages_ServerErrorFailsOverAndReturnsClearErrorWhenExhausted(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	groupID := int64(3130)
 	accounts := []service.Account{
 		{

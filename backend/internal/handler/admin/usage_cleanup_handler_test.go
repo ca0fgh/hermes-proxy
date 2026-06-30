@@ -105,7 +105,6 @@ func (s *cleanupRepoStub) DeleteUsageLogsBatch(ctx context.Context, filters serv
 var _ service.UsageCleanupRepository = (*cleanupRepoStub)(nil)
 
 func setupCleanupRouter(cleanupService *service.UsageCleanupService, userID int64) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	if userID > 0 {
 		router.Use(func(c *gin.Context) {

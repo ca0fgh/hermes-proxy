@@ -35,7 +35,6 @@ func TestDetectInterceptType_SuggestionModeUnaffected(t *testing.T) {
 }
 
 func TestSendMockInterceptResponse_MaxTokensOneHaiku(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(rec)
 

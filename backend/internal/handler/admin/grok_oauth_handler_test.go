@@ -65,7 +65,6 @@ func (u *grokQuotaHandlerUpstream) DoWithTLS(
 }
 
 func TestGrokOAuthHandlerQueryQuotaProbesUpstream(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &grokQuotaHandlerAccountRepo{account: &service.Account{
 		ID:          42,
@@ -105,7 +104,6 @@ func TestGrokOAuthHandlerQueryQuotaProbesUpstream(t *testing.T) {
 }
 
 func TestGrokOAuthHandlerResetQuotaReturnsUnsupported(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &grokQuotaHandlerAccountRepo{account: &service.Account{
 		ID:       43,
@@ -127,7 +125,6 @@ func TestGrokOAuthHandlerResetQuotaReturnsUnsupported(t *testing.T) {
 }
 
 func TestGrokOAuthHandlerRuntimeSanityDoesNotExposeSecrets(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	t.Setenv(xai.EnvBaseURL, "http://127.0.0.1:8080/v1?access_token=secret")
 	t.Setenv(xai.EnvClientID, "client-secret-like-value")
 

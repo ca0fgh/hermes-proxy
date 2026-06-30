@@ -15,7 +15,6 @@ import (
 )
 
 func TestParseTimeRange(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	req := httptest.NewRequest(http.MethodGet, "/?start_date=2024-01-01&end_date=2024-01-02&timezone=UTC", nil)
@@ -33,7 +32,6 @@ func TestParseTimeRange(t *testing.T) {
 }
 
 func TestParseOpsViewParam(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/?view=excluded", nil)
@@ -81,7 +79,6 @@ func TestParseOpsOpenAITokenStatsDuration(t *testing.T) {
 }
 
 func TestParseOpsOpenAITokenStatsFilter_Defaults(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -104,7 +101,6 @@ func TestParseOpsOpenAITokenStatsFilter_Defaults(t *testing.T) {
 }
 
 func TestParseOpsOpenAITokenStatsFilter_WithTopN(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(
@@ -138,7 +134,6 @@ func TestParseOpsOpenAITokenStatsFilter_InvalidParams(t *testing.T) {
 		"/?page_size=101",
 	}
 
-	gin.SetMode(gin.TestMode)
 	for _, rawURL := range tests {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -150,7 +145,6 @@ func TestParseOpsOpenAITokenStatsFilter_InvalidParams(t *testing.T) {
 }
 
 func TestParseOpsTimeRange(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	now := time.Now().UTC()
@@ -184,7 +178,6 @@ func TestPickThroughputBucketSeconds(t *testing.T) {
 }
 
 func TestParseOpsQueryMode(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/?mode=raw", nil)

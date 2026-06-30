@@ -16,7 +16,6 @@ import (
 )
 
 func TestAuthHandlerRevokeAllSessionsInvalidatesAccessTokens(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &userHandlerRepoStub{
 		user: &service.User{

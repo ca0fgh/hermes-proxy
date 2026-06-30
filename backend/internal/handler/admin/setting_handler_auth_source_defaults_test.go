@@ -125,7 +125,6 @@ func (s *failingAuthSourceSettingsRepoStub) Delete(ctx context.Context, key stri
 }
 
 func TestSettingHandler_GetSettings_InjectsAuthSourceDefaults(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
 		values: map[string]string{
 			service.SettingKeyRegistrationEnabled:                 "true",
@@ -160,7 +159,6 @@ func TestSettingHandler_GetSettings_InjectsAuthSourceDefaults(t *testing.T) {
 }
 
 func TestSettingHandler_UpdateSettings_PreservesOmittedAuthSourceDefaults(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
 		values: map[string]string{
 			service.SettingKeyRegistrationEnabled:                    "false",
@@ -207,7 +205,6 @@ func TestSettingHandler_UpdateSettings_PreservesOmittedAuthSourceDefaults(t *tes
 }
 
 func TestSettingHandler_UpdateSettings_PersistsPaymentVisibleMethodsAndAdvancedScheduler(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
 		values: map[string]string{
 			service.SettingKeyPromoCodeEnabled: "true",
@@ -253,7 +250,6 @@ func TestSettingHandler_UpdateSettings_PersistsPaymentVisibleMethodsAndAdvancedS
 }
 
 func TestSettingHandler_UpdateSettings_PreservesLegacyBlankPaymentVisibleMethodSource(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
 		values: map[string]string{
 			service.SettingKeyPromoCodeEnabled:               "true",
@@ -285,7 +281,6 @@ func TestSettingHandler_UpdateSettings_PreservesLegacyBlankPaymentVisibleMethodS
 }
 
 func TestSettingHandler_UpdateSettings_PersistsExplicitFalseOIDCCompatibilityFlags(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
 		values: map[string]string{
 			service.SettingKeyPromoCodeEnabled:               "true",
@@ -341,7 +336,6 @@ func TestSettingHandler_UpdateSettings_PersistsExplicitFalseOIDCCompatibilityFla
 }
 
 func TestSettingHandler_UpdateSettings_DoesNotSolidifyImplicitOIDCSecurityDefaultsOnLegacyUpgrade(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
 		values: map[string]string{
 			service.SettingKeyPromoCodeEnabled:                "true",
@@ -410,7 +404,6 @@ func TestSettingHandler_UpdateSettings_DoesNotSolidifyImplicitOIDCSecurityDefaul
 }
 
 func TestSettingHandler_UpdateSettings_RejectsInvalidPaymentVisibleMethodSource(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
 		values: map[string]string{
 			service.SettingKeyPromoCodeEnabled: "true",
@@ -438,7 +431,6 @@ func TestSettingHandler_UpdateSettings_RejectsInvalidPaymentVisibleMethodSource(
 }
 
 func TestSettingHandler_UpdateSettings_DoesNotPersistPartialSystemSettingsWhenAuthSourceDefaultsFail(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &failingAuthSourceSettingsRepoStub{
 		values: map[string]string{
 			service.SettingKeyRegistrationEnabled:                 "false",

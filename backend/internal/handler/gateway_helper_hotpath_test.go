@@ -145,7 +145,6 @@ func (s *helperConcurrencyCacheStub) CleanupStaleProcessSlots(ctx context.Contex
 }
 
 func newHelperTestContext(method, path string) (*gin.Context, *httptest.ResponseRecorder) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = httptest.NewRequest(method, path, nil)

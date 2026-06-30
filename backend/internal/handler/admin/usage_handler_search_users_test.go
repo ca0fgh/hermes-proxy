@@ -29,7 +29,6 @@ func (s *searchUsersAdminStub) ListUsers(ctx context.Context, page, pageSize int
 }
 
 func TestAdminUsageSearchUsers_IncludesDeletedAndFlags(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	stub := &searchUsersAdminStub{}
 	handler := NewUsageHandler(nil, nil, stub, nil)
 	router := gin.New()

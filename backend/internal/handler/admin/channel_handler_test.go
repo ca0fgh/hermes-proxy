@@ -426,7 +426,6 @@ func TestPricingRequestToService_NilPriceFields(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func setupSyncPricingModelsRouter(pricingSvc *service.PricingService) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	h := &ChannelHandler{pricingService: pricingSvc}
 	router.GET("/channels/pricing/sync-models", h.SyncPricingModels)

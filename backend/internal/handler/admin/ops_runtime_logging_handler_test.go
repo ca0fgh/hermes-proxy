@@ -69,7 +69,6 @@ func (s *testSettingRepo) Delete(ctx context.Context, key string) error {
 }
 
 func newOpsRuntimeRouter(handler *OpsHandler, withUser bool) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	if withUser {
 		r.Use(func(c *gin.Context) {

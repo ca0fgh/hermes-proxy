@@ -78,8 +78,6 @@ func TestApplyWeChatPaymentResumeClaimsRejectsPaymentTypeMismatch(t *testing.T) 
 func TestVerifyOrderPublicReturnsLegacyOrderState(t *testing.T) {
 	t.Parallel()
 
-	gin.SetMode(gin.TestMode)
-
 	db, err := sql.Open("sqlite", "file:payment_handler_public_verify?mode=memory&cache=shared")
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = db.Close() })
@@ -167,7 +165,6 @@ func TestVerifyOrderPublicReturnsLegacyOrderState(t *testing.T) {
 }
 
 func TestResolveOrderPublicByResumeTokenReturnsFrontendContractFields(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	t.Setenv("PAYMENT_RESUME_SIGNING_KEY", "0123456789abcdef0123456789abcdef")
 
 	db, err := sql.Open("sqlite", "file:payment_handler_public_resolve?mode=memory&cache=shared")
@@ -256,7 +253,6 @@ func TestResolveOrderPublicByResumeTokenReturnsFrontendContractFields(t *testing
 }
 
 func TestResolveOrderPublicByResumeTokenReturnsBadRequestForMismatchedToken(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	t.Setenv("PAYMENT_RESUME_SIGNING_KEY", "0123456789abcdef0123456789abcdef")
 
 	db, err := sql.Open("sqlite", "file:payment_handler_public_resolve_mismatch?mode=memory&cache=shared")
@@ -334,7 +330,6 @@ func TestResolveOrderPublicByResumeTokenReturnsBadRequestForMismatchedToken(t *t
 }
 
 func TestVerifyOrderPublicRejectsBlankOutTradeNo(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	db, err := sql.Open("sqlite", "file:payment_handler_public_verify_blank?mode=memory&cache=shared")
 	require.NoError(t, err)

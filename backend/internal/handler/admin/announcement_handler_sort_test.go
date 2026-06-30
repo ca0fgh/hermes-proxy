@@ -67,7 +67,6 @@ type announcementUserSubRepoCapture struct {
 }
 
 func newAnnouncementSortTestRouter(announcementRepo *announcementRepoCapture, userRepo *announcementUserRepoCapture) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	svc := service.NewAnnouncementService(
 		announcementRepo,
 		&announcementReadRepoCapture{},

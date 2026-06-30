@@ -16,7 +16,6 @@ import (
 
 func TestUserAvailableChannel_Unauthenticated401(t *testing.T) {
 	// 没有 AuthSubject 注入时，handler 应返回 401 且不触达 service 依赖。
-	gin.SetMode(gin.TestMode)
 	h := &AvailableChannelHandler{} // nil services — 401 路径不会调用它们
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

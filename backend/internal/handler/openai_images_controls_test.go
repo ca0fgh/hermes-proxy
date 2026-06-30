@@ -14,7 +14,6 @@ import (
 )
 
 func TestOpenAIGatewayHandlerImages_DisabledGroupRejectsBeforeScheduling(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	body := []byte(`{"model":"gpt-image-2","prompt":"draw","size":"1024x1024"}`)
 	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", bytes.NewReader(body))

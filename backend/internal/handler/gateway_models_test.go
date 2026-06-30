@@ -53,7 +53,6 @@ func newGatewayModelsHandlerForTest(repo service.AccountRepository) *GatewayHand
 }
 
 func TestGatewayModels_GeminiGroupFallsBackToGeminiModels(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(20)
 	h := newGatewayModelsHandlerForTest(
@@ -85,7 +84,6 @@ func TestGatewayModels_GeminiGroupFallsBackToGeminiModels(t *testing.T) {
 }
 
 func TestGatewayModels_GeminiGroupFiltersMappedModelsByPlatform(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(21)
 	h := newGatewayModelsHandlerForTest(
@@ -132,7 +130,6 @@ func TestGatewayModels_GeminiGroupFiltersMappedModelsByPlatform(t *testing.T) {
 }
 
 func TestGatewayModels_CustomModelsListDisabledKeepsOriginalModels(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(22)
 	h := newGatewayModelsHandlerForTest(
@@ -178,7 +175,6 @@ func TestGatewayModels_CustomModelsListDisabledKeepsOriginalModels(t *testing.T)
 }
 
 func TestGatewayModels_CustomModelsListFiltersAndOrdersMappedModels(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(23)
 	h := newGatewayModelsHandlerForTest(
@@ -225,7 +221,6 @@ func TestGatewayModels_CustomModelsListFiltersAndOrdersMappedModels(t *testing.T
 }
 
 func TestGatewayModels_CustomModelsListKeepsConcreteModelAllowedByWildcardMapping(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(26)
 	h := newGatewayModelsHandlerForTest(
@@ -270,7 +265,6 @@ func TestGatewayModels_CustomModelsListKeepsConcreteModelAllowedByWildcardMappin
 }
 
 func TestGatewayModels_CustomModelsListCanReturnEmptyWhenSelectionsUnavailable(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(24)
 	h := newGatewayModelsHandlerForTest(
@@ -315,7 +309,6 @@ func TestGatewayModels_CustomModelsListCanReturnEmptyWhenSelectionsUnavailable(t
 }
 
 func TestGatewayModels_CustomModelsListFiltersDefaultFallbackModels(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(25)
 	h := newGatewayModelsHandlerForTest(
@@ -352,7 +345,6 @@ func TestGatewayModels_CustomModelsListFiltersDefaultFallbackModels(t *testing.T
 }
 
 func TestGatewayModels_OpenAICustomModelsListKeepsOpenAIResponseShapeForDefaultFallback(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(27)
 	h := newGatewayModelsHandlerForTest(

@@ -198,7 +198,6 @@ func newTestGatewayHandler(t *testing.T, group *service.Group, accounts []*servi
 }
 
 func TestGatewayHandlerMessages_InterceptWarmup_AntigravityAccount_MixedSchedulingV1(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(2001)
 	accountID := int64(1001)
@@ -284,7 +283,6 @@ func TestGatewayHandlerMessages_InterceptWarmup_AntigravityAccount_MixedScheduli
 }
 
 func TestGatewayHandlerMessages_InterceptWarmup_AntigravityAccount_ForcePlatform(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	groupID := int64(2002)
 	accountID := int64(1002)

@@ -81,7 +81,6 @@ func buildTestHandler(repo service.UserPlatformQuotaRepository, cache service.Bi
 
 func putReq(t *testing.T, body string) (*gin.Context, *httptest.ResponseRecorder) {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	req, _ := http.NewRequest(http.MethodPut, "/", bytes.NewBufferString(body))
@@ -184,7 +183,6 @@ func TestUpdateUserPlatformQuotas_ReturnsLatestState(t *testing.T) {
 
 func postReq(t *testing.T, body string) (*gin.Context, *httptest.ResponseRecorder) {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	req, _ := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString(body))

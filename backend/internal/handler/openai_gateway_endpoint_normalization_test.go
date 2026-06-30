@@ -14,7 +14,6 @@ import (
 // unified GetUpstreamEndpoint helper produces the same results as the
 // former normalizedOpenAIUpstreamEndpoint for OpenAI platform requests.
 func TestOpenAIUpstreamEndpoint_ViaGetUpstreamEndpoint(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
 		name string

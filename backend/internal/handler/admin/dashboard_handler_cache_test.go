@@ -71,7 +71,6 @@ func TestDashboardHandler_GetUsageTrend_UsesCache(t *testing.T) {
 	t.Cleanup(resetDashboardReadCachesForTest)
 	resetDashboardReadCachesForTest()
 
-	gin.SetMode(gin.TestMode)
 	repo := &dashboardUsageRepoCacheProbe{}
 	dashboardSvc := service.NewDashboardService(repo, nil, nil, nil)
 	handler := NewDashboardHandler(dashboardSvc, nil)
@@ -96,7 +95,6 @@ func TestDashboardHandler_GetUserUsageTrend_UsesCache(t *testing.T) {
 	t.Cleanup(resetDashboardReadCachesForTest)
 	resetDashboardReadCachesForTest()
 
-	gin.SetMode(gin.TestMode)
 	repo := &dashboardUsageRepoCacheProbe{}
 	dashboardSvc := service.NewDashboardService(repo, nil, nil, nil)
 	handler := NewDashboardHandler(dashboardSvc, nil)

@@ -24,7 +24,6 @@ import (
 
 func newGinContextForEndpoint(t *testing.T, endpoint string) (*gin.Context, *httptest.ResponseRecorder) {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodPost, endpoint, nil)
@@ -205,7 +204,6 @@ func TestInboundIsResponses_CoversAllRoutes(t *testing.T) {
 
 // 用 c.Request.URL.Path 作为 fallback（当 c.FullPath() 为空时，例如某些测试 fixture）。
 func TestInboundIsResponses_FallsBackToURLPath(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodPost, "/responses", nil)

@@ -19,7 +19,6 @@ import (
 )
 
 func TestWriteSuccessResponse(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
 		name            string
@@ -113,7 +112,6 @@ func TestWriteSuccessResponse(t *testing.T) {
 //
 // If either contract breaks, the Stripe "unknown order → 500 loop" regresses.
 func TestUnknownOrderWebhookAcksWithSuccess(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	// 1) Sentinel recognition through wrapping.
 	wrapped := fmt.Errorf("%w: out_trade_no=sub2_missing_42", service.ErrOrderNotFound)

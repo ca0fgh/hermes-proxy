@@ -31,7 +31,6 @@ func (f *fakeQuotaRepoForUserHandler) ListByUser(_ context.Context, _ int64) ([]
 func TestGetMyPlatformQuotas_EmptyReturns200WithEmptyArray(t *testing.T) {
 	repo := &fakeQuotaRepoForUserHandler{records: nil}
 	h := &UserHandler{userPlatformQuotaRepo: repo}
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/user/platform-quotas", nil)
@@ -69,7 +68,6 @@ func TestGetMyPlatformQuotas_D14_LazyZeroForExpiredWindow(t *testing.T) {
 		DailyWindowStart: &pastStart,
 	}}}
 	h := &UserHandler{userPlatformQuotaRepo: repo}
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/user/platform-quotas", nil)
@@ -92,7 +90,6 @@ func TestGetMyPlatformQuotas_D14_LazyZeroForExpiredWindow(t *testing.T) {
 
 func TestGetMyPlatformQuotas_NilRepo_Returns200Empty(t *testing.T) {
 	h := &UserHandler{userPlatformQuotaRepo: nil}
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/user/platform-quotas", nil)
@@ -105,7 +102,6 @@ func TestGetMyPlatformQuotas_NilRepo_Returns200Empty(t *testing.T) {
 
 func TestGetMyPlatformQuotas_NoAuth_Returns401(t *testing.T) {
 	h := &UserHandler{userPlatformQuotaRepo: nil}
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/user/platform-quotas", nil)

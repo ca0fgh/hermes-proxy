@@ -135,7 +135,6 @@ func TestAppendAuthSourceDefaultChanges_DetectsPerWindow(t *testing.T) {
 // TestSettingHandler_AuthSourcePlatformQuotas_PutGetRoundTrip 验证 Bug A 修复：
 // PUT 发 auth_source_default_email_platform_quotas，GET 能读回相同值（端到端往返）。
 func TestSettingHandler_AuthSourcePlatformQuotas_PutGetRoundTrip(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{
 		values: map[string]string{
 			service.SettingKeyPromoCodeEnabled: "true",

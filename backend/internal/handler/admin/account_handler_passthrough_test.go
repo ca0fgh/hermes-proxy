@@ -12,7 +12,6 @@ import (
 )
 
 func TestAccountHandler_Create_AnthropicAPIKeyPassthroughExtraForwarded(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	adminSvc := newStubAdminService()
 	handler := NewAccountHandler(

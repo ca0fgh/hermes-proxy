@@ -59,7 +59,6 @@ func TestOpenAIHandleStreamingAwareError_JSONEscaping(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -113,7 +112,6 @@ func TestResolveOpenAIMessagesMetadataSession_PreservesExplicitPromptCacheKey(t 
 }
 
 func TestOpenAIHandleStreamingAwareError_NonStreaming(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -155,7 +153,6 @@ func TestReadRequestBodyWithPrealloc_MaxBytesError(t *testing.T) {
 }
 
 func TestOpenAIEnsureForwardErrorResponse_WritesFallbackWhenNotWritten(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -180,7 +177,6 @@ func TestOpenAIEnsureForwardErrorResponse_WritesFallbackWhenNotWritten(t *testin
 // 这是 case B 修复：旧实现遇到 Writer.Written 直接 return false，
 // 客户端只能拿到 silent EOF；Codex CLI 报 "stream closed before response.completed"。
 func TestOpenAIEnsureForwardErrorResponse_AppendsSSEAfterWritten(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -200,7 +196,6 @@ func TestOpenAIEnsureForwardErrorResponse_AppendsSSEAfterWritten(t *testing.T) {
 // case B 回归测试：/responses 路径，Writer 已被写过（模拟 ping flushed），
 // ensureForwardErrorResponse 必须发 response.failed，让 Codex 收到合规终止事件。
 func TestOpenAIEnsureForwardErrorResponse_ResponsesRouteAfterWrittenEmitsResponseFailed(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodPost, EndpointResponses, nil)
@@ -220,7 +215,6 @@ func TestOpenAIEnsureForwardErrorResponse_ResponsesRouteAfterWrittenEmitsRespons
 }
 
 func TestShouldLogOpenAIForwardFailureAsWarn(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	t.Run("fallback_written_should_not_downgrade", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -250,7 +244,6 @@ func TestShouldLogOpenAIForwardFailureAsWarn(t *testing.T) {
 }
 
 func TestOpenAIRecoverResponsesPanic_WritesFallbackResponse(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -278,7 +271,6 @@ func TestOpenAIRecoverResponsesPanic_WritesFallbackResponse(t *testing.T) {
 }
 
 func TestOpenAIRecoverResponsesPanic_NoPanicNoWrite(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -299,7 +291,6 @@ func TestOpenAIRecoverResponsesPanic_NoPanicNoWrite(t *testing.T) {
 // Panic 在已 flush 的 /v1/responses 流中：状态码无法改（已 written），
 // 但 body 应追加 response.failed 让客户端识别为合规截断而不是 silent EOF。
 func TestOpenAIRecoverResponsesPanic_AppendsResponseFailedAfterWritten(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -350,7 +341,6 @@ func TestOpenAIMissingResponsesDependencies(t *testing.T) {
 
 func TestOpenAIEnsureResponsesDependencies(t *testing.T) {
 	t.Run("missing_dependencies_returns_503", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
@@ -370,7 +360,6 @@ func TestOpenAIEnsureResponsesDependencies(t *testing.T) {
 	})
 
 	t.Run("already_written_response_not_overridden", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
@@ -385,7 +374,6 @@ func TestOpenAIEnsureResponsesDependencies(t *testing.T) {
 	})
 
 	t.Run("dependencies_ready_returns_true_and_no_write", func(t *testing.T) {
-		gin.SetMode(gin.TestMode)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
@@ -481,7 +469,6 @@ func TestOpenAIModelMappedBodyCache(t *testing.T) {
 }
 
 func TestOpenAIResponses_MissingDependencies_ReturnsServiceUnavailable(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -517,7 +504,6 @@ func TestOpenAIResponses_MissingDependencies_ReturnsServiceUnavailable(t *testin
 }
 
 func TestOpenAIResponses_SetsClientTransportHTTP(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -532,7 +518,6 @@ func TestOpenAIResponses_SetsClientTransportHTTP(t *testing.T) {
 }
 
 func TestOpenAIResponses_RejectsMessageIDAsPreviousResponseID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -560,7 +545,6 @@ func TestOpenAIResponses_RejectsMessageIDAsPreviousResponseID(t *testing.T) {
 }
 
 func TestOpenAIResponses_RejectsHTTPContinuationPreviousResponseID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -589,7 +573,6 @@ func TestOpenAIResponses_RejectsHTTPContinuationPreviousResponseID(t *testing.T)
 }
 
 func TestOpenAIResponses_FunctionCallOutputHTTPGuidanceDoesNotSuggestPreviousResponseReuse(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -618,7 +601,6 @@ func TestOpenAIResponses_FunctionCallOutputHTTPGuidanceDoesNotSuggestPreviousRes
 }
 
 func TestOpenAIResponsesWebSocket_SetsClientTransportWSWhenUpgradeValid(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -634,7 +616,6 @@ func TestOpenAIResponsesWebSocket_SetsClientTransportWSWhenUpgradeValid(t *testi
 }
 
 func TestOpenAIResponsesWebSocket_InvalidUpgradeDoesNotSetTransport(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -648,7 +629,6 @@ func TestOpenAIResponsesWebSocket_InvalidUpgradeDoesNotSetTransport(t *testing.T
 }
 
 func TestOpenAIResponsesWebSocket_RejectsMessageIDAsPreviousResponseID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	h := newOpenAIHandlerForPreviousResponseIDValidation(t, nil)
 	wsServer := newOpenAIWSHandlerTestServer(t, h, middleware.AuthSubject{UserID: 1, Concurrency: 1})
@@ -680,7 +660,6 @@ func TestOpenAIResponsesWebSocket_RejectsMessageIDAsPreviousResponseID(t *testin
 }
 
 func TestOpenAIResponsesWebSocket_PreviousResponseIDKindLoggedBeforeAcquireFailure(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	cache := &concurrencyCacheMock{
 		acquireUserSlotFn: func(ctx context.Context, userID int64, maxConcurrency int, requestID string) (bool, error) {
@@ -818,7 +797,6 @@ func (r *contentModerationHandlerTestRepo) UpdateLogEmailSent(ctx context.Contex
 }
 
 func TestOpenAIResponsesWebSocket_ContentModerationBlocksFirstFrame(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	moderationServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		require.Equal(t, "/v1/moderations", r.URL.Path)
@@ -957,7 +935,6 @@ func TestOpenAIResponsesWebSocket_PassthroughUsageLogLeavesUserAgentNilWhenMissi
 }
 
 func TestSetOpenAIClientTransportHTTP(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -967,7 +944,6 @@ func TestSetOpenAIClientTransportHTTP(t *testing.T) {
 }
 
 func TestSetOpenAIClientTransportWS(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -1216,7 +1192,6 @@ func (s *openAIWSUsageHandlerChannelRepoStub) GetGroupPlatforms(ctx context.Cont
 }
 
 func TestOpenAIResponsesWebSocket_FailoverOnUpstreamUsageLimitEvent(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	firstHitCh := make(chan []byte, 1)
 	secondHitCh := make(chan []byte, 1)
@@ -1413,7 +1388,6 @@ func TestOpenAIResponsesWebSocket_FailoverOnUpstreamUsageLimitEvent(t *testing.T
 
 func runOpenAIResponsesWebSocketUsageLogCase(t *testing.T, tc openAIResponsesWSUsageLogCase) openAIResponsesWSUsageLogResult {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 
 	upstreamPayloadCh := make(chan []byte, 1)
 	upstreamErrCh := make(chan error, 1)
@@ -1622,7 +1596,6 @@ func testStringPtr(v string) *string {
 }
 
 func TestOpenAIForwardErrorAlreadyCommunicated(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	t.Run("upstream response failed after write", func(t *testing.T) {
 		w := httptest.NewRecorder()

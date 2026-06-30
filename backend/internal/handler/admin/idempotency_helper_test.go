@@ -41,7 +41,6 @@ func (storeUnavailableRepoStub) DeleteExpired(context.Context, time.Time, int) (
 }
 
 func TestExecuteAdminIdempotentJSONFailCloseOnStoreUnavailable(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	service.SetDefaultIdempotencyCoordinator(service.NewIdempotencyCoordinator(storeUnavailableRepoStub{}, service.DefaultIdempotencyConfig()))
 	t.Cleanup(func() {
 		service.SetDefaultIdempotencyCoordinator(nil)
@@ -67,7 +66,6 @@ func TestExecuteAdminIdempotentJSONFailCloseOnStoreUnavailable(t *testing.T) {
 }
 
 func TestExecuteAdminIdempotentJSONFailOpenOnStoreUnavailable(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	service.SetDefaultIdempotencyCoordinator(service.NewIdempotencyCoordinator(storeUnavailableRepoStub{}, service.DefaultIdempotencyConfig()))
 	t.Cleanup(func() {
 		service.SetDefaultIdempotencyCoordinator(nil)
@@ -233,7 +231,6 @@ func (r *memoryIdempotencyRepoStub) DeleteExpired(_ context.Context, _ time.Time
 }
 
 func TestExecuteAdminIdempotentJSONConcurrentRetryOnlyOneSideEffect(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	repo := newMemoryIdempotencyRepoStub()
 	cfg := service.DefaultIdempotencyConfig()
 	cfg.ProcessingTimeout = 2 * time.Second

@@ -14,7 +14,6 @@ import (
 )
 
 func TestOpenAICompatibleHandlersRejectInvalidStreamFieldType(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
 		name string
@@ -86,7 +85,6 @@ func TestOpenAICompatibleHandlersRejectInvalidStreamFieldType(t *testing.T) {
 }
 
 func TestGatewayOpenAICompatibleHandlersAllowBooleanStreamToContinue(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
 		name string

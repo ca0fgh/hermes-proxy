@@ -56,6 +56,7 @@ type cleanupRepoStub struct {
 }
 
 type dashboardRepoStub struct {
+	mu             sync.Mutex
 	recomputeErr   error
 	recomputeCalls int
 }
@@ -65,8 +66,19 @@ func (s *dashboardRepoStub) AggregateRange(ctx context.Context, start, end time.
 }
 
 func (s *dashboardRepoStub) RecomputeRange(ctx context.Context, start, end time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.recomputeCalls++
 	return s.recomputeErr
+}
+
+// RecomputeCallCount 在持锁状态下返回 RecomputeRange 的调用计数。RecomputeRange 由
+// DashboardAggregationService.TriggerRecomputeRange 启动的后台 goroutine 调用,而
+// require.Eventually 从另一 goroutine 轮询此值;直接读字段会与 goroutine 的写竞争。
+func (s *dashboardRepoStub) RecomputeCallCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.recomputeCalls
 }
 
 func (s *dashboardRepoStub) GetAggregationWatermark(ctx context.Context) (time.Time, error) {
@@ -580,7 +592,7 @@ func TestUsageCleanupServiceExecuteTaskDashboardRecomputeError(t *testing.T) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 	require.Len(t, repo.markSucceeded, 1)
-	require.Eventually(t, func() bool { return dashboardRepo.recomputeCalls == 1 }, time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return dashboardRepo.RecomputeCallCount() == 1 }, time.Second, 10*time.Millisecond)
 }
 
 func TestUsageCleanupServiceExecuteTaskDashboardRecomputeSuccess(t *testing.T) {
@@ -608,7 +620,7 @@ func TestUsageCleanupServiceExecuteTaskDashboardRecomputeSuccess(t *testing.T) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 	require.Len(t, repo.markSucceeded, 1)
-	require.Eventually(t, func() bool { return dashboardRepo.recomputeCalls == 1 }, time.Second, 10*time.Millisecond)
+	require.Eventually(t, func() bool { return dashboardRepo.RecomputeCallCount() == 1 }, time.Second, 10*time.Millisecond)
 }
 
 func TestUsageCleanupServiceExecuteTaskCanceled(t *testing.T) {

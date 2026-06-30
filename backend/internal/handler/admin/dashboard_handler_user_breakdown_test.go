@@ -36,7 +36,6 @@ func (r *userBreakdownRepoCapture) GetUserBreakdownStats(
 }
 
 func newUserBreakdownRouter(repo *userBreakdownRepoCapture) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	svc := service.NewDashboardService(repo, nil, nil, nil)
 	h := NewDashboardHandler(svc, nil)
 	router := gin.New()

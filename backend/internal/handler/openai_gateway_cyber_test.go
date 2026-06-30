@@ -12,7 +12,6 @@ import (
 
 // newTestGinContext builds a bare gin.Context backed by an httptest recorder.
 func newTestGinContext() *gin.Context {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	return c

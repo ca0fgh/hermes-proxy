@@ -30,7 +30,6 @@ func newCreateAndRedeemHandler() *RedeemHandler {
 // and treated as "validation passed" (returns 0 to indicate panic).
 func postCreateAndRedeemValidation(t *testing.T, handler *RedeemHandler, body any) (code int) {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 

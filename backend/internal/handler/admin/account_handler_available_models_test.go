@@ -30,7 +30,6 @@ func (s *availableModelsAdminService) GetAccount(_ context.Context, id int64) (*
 }
 
 func setupAvailableModelsRouter(adminSvc service.AdminService) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	handler := NewAccountHandler(adminSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	router.GET("/api/v1/admin/accounts/:id/models", handler.GetAvailableModels)
@@ -54,7 +53,6 @@ func (u *syncUpstreamHTTPUpstream) DoWithTLS(req *http.Request, proxyURL string,
 }
 
 func setupSyncUpstreamModelsRouter(adminSvc service.AdminService, upstream service.HTTPUpstream) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	accountTestSvc := service.NewAccountTestService(
 		nil,

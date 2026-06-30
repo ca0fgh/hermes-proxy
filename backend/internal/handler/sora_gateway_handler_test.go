@@ -408,7 +408,6 @@ func (s *stubUsageLogRepo) GetDailyStatsAggregated(ctx context.Context, userID i
 }
 
 func TestSoraGatewayHandler_ChatCompletions(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	cfg := &config.Config{
 		RunMode: config.RunModeSimple,
 		Gateway: config.GatewayConfig{
@@ -558,7 +557,6 @@ func TestSoraHandler_ValidationExtraction(t *testing.T) {
 
 // TestGenerateOpenAISessionHash_WithBody 验证 generateOpenAISessionHash 的 body/header 解析逻辑
 func TestGenerateOpenAISessionHash_WithBody(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	// 从 body 提取 prompt_cache_key
 	body := []byte(`{"model":"sora","prompt_cache_key":"session-abc"}`)
@@ -606,7 +604,6 @@ func TestSoraHandleStreamingAwareError_JSONEscaping(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 			c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -636,7 +633,6 @@ func TestSoraHandleStreamingAwareError_JSONEscaping(t *testing.T) {
 }
 
 func TestSoraHandleFailoverExhausted_StreamPassesUpstreamMessage(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -663,7 +659,6 @@ func TestSoraHandleFailoverExhausted_StreamPassesUpstreamMessage(t *testing.T) {
 }
 
 func TestSoraHandleFailoverExhausted_CloudflareChallengeIncludesRay(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -691,7 +686,6 @@ func TestSoraHandleFailoverExhausted_CloudflareChallengeIncludesRay(t *testing.T
 }
 
 func TestSoraHandleFailoverExhausted_CfShield429MappedToRateLimitError(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)

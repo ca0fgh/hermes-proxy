@@ -54,7 +54,6 @@ func (s *settingHandlerPublicRepoStub) Delete(ctx context.Context, key string) e
 }
 
 func TestSettingHandler_GetPublicSettings_ExposesForceEmailOnThirdPartySignup(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &settingHandlerPublicRepoStub{
 		values: map[string]string{
@@ -83,7 +82,6 @@ func TestSettingHandler_GetPublicSettings_ExposesForceEmailOnThirdPartySignup(t 
 }
 
 func TestSettingHandler_GetPublicSettings_ExposesWeChatOAuthModeCapabilities(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	h := NewSettingHandler(service.NewSettingService(&settingHandlerPublicRepoStub{
 		values: map[string]string{
 			service.SettingKeyWeChatConnectEnabled:             "true",

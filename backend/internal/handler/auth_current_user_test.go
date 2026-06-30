@@ -16,7 +16,6 @@ import (
 )
 
 func TestAuthHandlerGetCurrentUserReturnsProfileCompatibilityFields(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	verifiedAt := time.Date(2026, 4, 20, 8, 30, 0, 0, time.UTC)
 	repo := &userHandlerRepoStub{

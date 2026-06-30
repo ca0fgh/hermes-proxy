@@ -18,7 +18,6 @@ import (
 // updateSettingsCodexStatus PUT /settings 仅带给定字段，返回 HTTP 状态码（轻量 stub repo，无 DB）。
 func updateSettingsCodexStatus(t *testing.T, body map[string]any) int {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{values: map[string]string{service.SettingKeyPromoCodeEnabled: "true"}}
 	svc := service.NewSettingService(repo, &config.Config{Default: config.DefaultConfig{UserConcurrency: 5}})
 	handler := NewSettingHandler(svc, nil, nil, nil, nil, nil, nil)

@@ -44,7 +44,6 @@ func TestKeyPrefix(t *testing.T) {
 }
 
 func TestExtractAttemptedKey(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	cases := []struct {
 		name    string

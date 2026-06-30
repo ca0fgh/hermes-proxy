@@ -33,7 +33,6 @@ import (
 )
 
 func TestWeChatOAuthStartRedirectsAndSetsPendingCookies(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, client := newWeChatOAuthTestHandlerWithSettings(t, false, map[string]string{
 		service.SettingKeyWeChatConnectEnabled:             "true",
 		service.SettingKeyWeChatConnectAppID:               "wx-open-app",
@@ -66,7 +65,6 @@ func TestWeChatOAuthStartRedirectsAndSetsPendingCookies(t *testing.T) {
 }
 
 func TestWeChatOAuthStart_AllowsOpenModeWhenBothCapabilitiesEnabled(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, client := newWeChatOAuthTestHandlerWithSettings(t, false, map[string]string{
 		service.SettingKeyWeChatConnectEnabled:             "true",
 		service.SettingKeyWeChatConnectAppID:               "wx-shared-app",

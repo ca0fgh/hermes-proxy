@@ -51,7 +51,6 @@ func newJSONResponseWithHeader(status int, body, key, value string) *http.Respon
 }
 
 func newSoraTestContext() (*gin.Context, *httptest.ResponseRecorder) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/accounts/1/test", nil)

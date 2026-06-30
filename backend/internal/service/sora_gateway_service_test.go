@@ -402,7 +402,6 @@ func TestSoraProErrorMessage(t *testing.T) {
 }
 
 func TestSoraGatewayService_WriteSoraError_StreamEscapesJSON(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)

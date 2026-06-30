@@ -94,7 +94,6 @@ func captureHandlerStructuredLog(t *testing.T) (*handlerInMemoryLogSink, func())
 func TestIsOpenAIRemoteCompactPath(t *testing.T) {
 	require.False(t, isOpenAIRemoteCompactPath(nil))
 
-	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 
@@ -109,7 +108,6 @@ func TestIsOpenAIRemoteCompactPath(t *testing.T) {
 }
 
 func TestLogOpenAIRemoteCompactOutcome_Succeeded(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	logSink, restore := captureHandlerStructuredLog(t)
 	defer restore()
 
@@ -135,7 +133,6 @@ func TestLogOpenAIRemoteCompactOutcome_Succeeded(t *testing.T) {
 }
 
 func TestLogOpenAIRemoteCompactOutcome_Failed(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	logSink, restore := captureHandlerStructuredLog(t)
 	defer restore()
 
@@ -155,7 +152,6 @@ func TestLogOpenAIRemoteCompactOutcome_Failed(t *testing.T) {
 }
 
 func TestLogOpenAIRemoteCompactOutcome_NonCompactSkips(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	logSink, restore := captureHandlerStructuredLog(t)
 	defer restore()
 
@@ -172,7 +168,6 @@ func TestLogOpenAIRemoteCompactOutcome_NonCompactSkips(t *testing.T) {
 }
 
 func TestOpenAIResponses_CompactUnauthorizedLogsFailed(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	logSink, restore := captureHandlerStructuredLog(t)
 	defer restore()
 

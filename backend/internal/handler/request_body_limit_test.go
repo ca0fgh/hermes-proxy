@@ -13,7 +13,6 @@ import (
 )
 
 func TestRequestBodyLimitTooLarge(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	limit := int64(16)
 	router := gin.New()

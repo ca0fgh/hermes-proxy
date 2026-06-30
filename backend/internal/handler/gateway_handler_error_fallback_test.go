@@ -14,7 +14,6 @@ import (
 )
 
 func TestGatewayEnsureForwardErrorResponse_WritesFallbackWhenNotWritten(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -38,7 +37,6 @@ func TestGatewayEnsureForwardErrorResponse_WritesFallbackWhenNotWritten(t *testi
 // Writer 已写后 ensureForwardErrorResponse 必须把错误以 SSE 形式追加，
 // 而不是 silent EOF。非 /responses 路径走 legacy data:{"type":"error"} 分支。
 func TestGatewayEnsureForwardErrorResponse_AppendsSSEAfterWritten(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
@@ -56,7 +54,6 @@ func TestGatewayEnsureForwardErrorResponse_AppendsSSEAfterWritten(t *testing.T) 
 // case B 回归：Anthropic-backed /responses，Writer 已被写过时
 // ensureForwardErrorResponse 仍要发 response.failed。
 func TestGatewayEnsureForwardErrorResponse_ResponsesRouteAfterWrittenEmitsResponseFailed(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodPost, EndpointResponses, nil)
@@ -73,7 +70,6 @@ func TestGatewayEnsureForwardErrorResponse_ResponsesRouteAfterWrittenEmitsRespon
 }
 
 func TestGatewayForwardErrorAlreadyCommunicated(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	t.Run("json error already written", func(t *testing.T) {
 		w := httptest.NewRecorder()

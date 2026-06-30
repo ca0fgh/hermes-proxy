@@ -37,7 +37,6 @@ func baseValidDingTalkBody() map[string]any {
 // TestSettingsPUT_DingTalk_V3_InternalOnlyAllowsEmptyCorpID 验证方案 A：
 // internal_only + internal_corp_id="" 应通过校验（→ 200），不再是 400。
 func TestSettingsPUT_DingTalk_V3_InternalOnlyAllowsEmptyCorpID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, _ := newDingTalkSettingsHandler()
 
 	body := baseValidDingTalkBody()
@@ -59,7 +58,6 @@ func TestSettingsPUT_DingTalk_V3_InternalOnlyAllowsEmptyCorpID(t *testing.T) {
 
 // TestSettingsPUT_DingTalk_HappyPath_None 验证 none policy → 200
 func TestSettingsPUT_DingTalk_HappyPath_None(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, _ := newDingTalkSettingsHandler()
 
 	body := baseValidDingTalkBody()
@@ -85,7 +83,6 @@ func TestSettingsPUT_DingTalk_HappyPath_None(t *testing.T) {
 
 // TestSettingsPUT_DingTalk_HappyPath_InternalOnly_WithCorpID 验证 internal_only + corp_id → 200
 func TestSettingsPUT_DingTalk_HappyPath_InternalOnly_WithCorpID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, _ := newDingTalkSettingsHandler()
 
 	body := baseValidDingTalkBody()
@@ -108,7 +105,6 @@ func TestSettingsPUT_DingTalk_HappyPath_InternalOnly_WithCorpID(t *testing.T) {
 // TestSettingsPUT_DingTalk_BypassRegistration_RoundTrip 验证 bypass_registration 字段 save+load。
 // 必须用 policy=internal_only：bypass 仅在该 policy 下生效，其它 policy 写入层会 coerce 为 false。
 func TestSettingsPUT_DingTalk_BypassRegistration_RoundTrip(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, _ := newDingTalkSettingsHandler()
 
 	body := baseValidDingTalkBody()
@@ -137,7 +133,6 @@ func TestSettingsPUT_DingTalk_BypassRegistration_RoundTrip(t *testing.T) {
 // 用 enabled=true 时必然触发"Client ID is required when enabled"的空 client_id 作为
 // 哨兵——只要 enabled=false 仍能 200 就证明跳过了。
 func TestSettingsPUT_DingTalk_Disabled_SkipsValidation(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, _ := newDingTalkSettingsHandler()
 
 	body := map[string]any{
@@ -161,7 +156,6 @@ func TestSettingsPUT_DingTalk_Disabled_SkipsValidation(t *testing.T) {
 
 // TestSettingsPUT_DingTalk_SyncFlags_InternalOnly_RoundTrip 验证三个 sync 开关在 internal_only 下可正常 save+load。
 func TestSettingsPUT_DingTalk_SyncFlags_InternalOnly_RoundTrip(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, _ := newDingTalkSettingsHandler()
 
 	body := baseValidDingTalkBody()
@@ -192,7 +186,6 @@ func TestSettingsPUT_DingTalk_SyncFlags_InternalOnly_RoundTrip(t *testing.T) {
 
 // TestSettingsPUT_DingTalk_SyncFlags_PolicyNone_CoercedToFalse 验证 policy=none 时三个 sync 开关被 coerce 为 false。
 func TestSettingsPUT_DingTalk_SyncFlags_PolicyNone_CoercedToFalse(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, _ := newDingTalkSettingsHandler()
 
 	body := baseValidDingTalkBody()
@@ -225,7 +218,6 @@ func TestSettingsPUT_DingTalk_SyncFlags_PolicyNone_CoercedToFalse(t *testing.T) 
 // admin 直接把 corp_restriction_policy=whitelist 提交（前端 UI 已无此选项，但 API 仍可命中）
 // 不应导致 400 失败，应该被静默 coerce 为 none 后通过校验。
 func TestSettingsPUT_DingTalk_StaleWhitelist_CoercedToNone(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	handler, repo := newDingTalkSettingsHandler()
 
 	body := baseValidDingTalkBody()
@@ -248,7 +240,6 @@ func TestSettingsPUT_DingTalk_StaleWhitelist_CoercedToNone(t *testing.T) {
 
 // TestSettingsPUT_DingTalk_SyncAttrKey_RoundTrip 验证 3 个 attr key 字段 save+load + 空值 fallback 到默认值。
 func TestSettingsPUT_DingTalk_SyncAttrKey_RoundTrip(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	t.Run("custom_attr_keys_saved", func(t *testing.T) {
 		handler, repo := newDingTalkSettingsHandler()

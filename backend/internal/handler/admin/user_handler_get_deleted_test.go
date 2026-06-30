@@ -24,7 +24,6 @@ func (s *getByIDAdminStub) GetUserIncludeDeleted(_ context.Context, id int64) (*
 }
 
 func setupGetByIDRouter(svc service.AdminService) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	h := NewUserHandler(svc, nil, nil, nil)
 	r.GET("/admin/users/:id", h.GetByID)

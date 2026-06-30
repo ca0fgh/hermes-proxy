@@ -140,7 +140,6 @@ func (s *userHandlerRepoStub) UnbindUserAuthProvider(_ context.Context, _ int64,
 }
 
 func TestUserHandlerUpdateProfileReturnsAvatarURL(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &userHandlerRepoStub{
 		user: &service.User{
@@ -178,7 +177,6 @@ func TestUserHandlerUpdateProfileReturnsAvatarURL(t *testing.T) {
 }
 
 func TestUserHandlerGetProfileReturnsIdentitySummaries(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	verifiedAt := time.Date(2026, 4, 20, 8, 30, 0, 0, time.UTC)
 	repo := &userHandlerRepoStub{
@@ -266,7 +264,6 @@ func TestUserHandlerGetProfileReturnsIdentitySummaries(t *testing.T) {
 }
 
 func TestUserHandlerGetProfileReturnsLegacyCompatibilityFields(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	verifiedAt := time.Date(2026, 4, 20, 8, 30, 0, 0, time.UTC)
 	repo := &userHandlerRepoStub{
@@ -347,7 +344,6 @@ func TestUserHandlerGetProfileReturnsLegacyCompatibilityFields(t *testing.T) {
 }
 
 func TestUserHandlerGetProfileDoesNotInferEditedProfileSourcesWithoutMatchingIdentityMetadata(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &userHandlerRepoStub{
 		user: &service.User{
@@ -495,7 +491,6 @@ func (s *userHandlerEmailCacheStub) IncrNotifyCodeUserRate(context.Context, int6
 }
 
 func TestUserHandlerBindEmailIdentityReturnsProfileResponse(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &userHandlerRepoStub{
 		user: &service.User{
@@ -549,7 +544,6 @@ func TestUserHandlerBindEmailIdentityReturnsProfileResponse(t *testing.T) {
 }
 
 func TestUserHandlerUnbindIdentityReturnsUpdatedProfile(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &userHandlerRepoStub{
 		user: &service.User{
@@ -603,7 +597,6 @@ func TestUserHandlerUnbindIdentityReturnsUpdatedProfile(t *testing.T) {
 }
 
 func TestUserHandlerUnbindIdentityRevokesAllUserSessionsWhenAuthServiceConfigured(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &userHandlerRepoStub{
 		user: &service.User{
@@ -651,7 +644,6 @@ func TestUserHandlerUnbindIdentityRevokesAllUserSessionsWhenAuthServiceConfigure
 }
 
 func TestUserHandlerUnbindIdentityDoesNotRevokeSessionsWhenNothingWasUnbound(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &userHandlerRepoStub{
 		user: &service.User{
@@ -695,7 +687,6 @@ func TestUserHandlerUnbindIdentityDoesNotRevokeSessionsWhenNothingWasUnbound(t *
 }
 
 func TestUserHandlerBindEmailIdentityRejectsWrongCurrentPasswordForBoundEmail(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	user := &service.User{
 		ID:       11,
@@ -748,7 +739,6 @@ func TestUserHandlerBindEmailIdentityRejectsWrongCurrentPasswordForBoundEmail(t 
 }
 
 func TestUserHandlerStartIdentityBindingReturnsAuthorizeURL(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	repo := &userHandlerRepoStub{
 		user: &service.User{
