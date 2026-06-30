@@ -2,6 +2,12 @@ import { defineConfig, loadEnv, Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import checker from 'vite-plugin-checker'
 import { resolve } from 'path'
+import { writeFileSync } from 'node:fs'
+
+// 后端嵌入前端产物的目录。`//go:embed all:dist` 要求该目录在干净 checkout
+// （尚未构建前端）时至少有一个文件，否则 -tags=embed 出货编译路径会失败。
+// 仓库为此跟踪了占位文件 dist/.keep。
+const DIST_OUT_DIR = resolve(__dirname, '../backend/internal/web/dist')
 
 /**
  * Vite 插件：开发模式下注入公开配置到 index.html
@@ -34,6 +40,23 @@ function injectPublicSettings(backendUrl: string): Plugin {
   }
 }
 
+/**
+ * Vite 插件：生产构建后重建 dist/.keep 占位文件。
+ * build.emptyOutDir 每次构建会清空 outDir，连带删除受 git 跟踪的 dist/.keep。
+ * 若该删除被某次 `git add -A` 误提交，干净 checkout 的 dist 将为空，
+ * `//go:embed all:dist` 在 CI/lint 下编译失败——正是本仓库刚修过的 embed 回归。
+ * 构建后自动补回占位文件，使本地构建永不留下 .keep 的删除态，从根上杜绝该回归。
+ */
+function preserveDistKeep(): Plugin {
+  return {
+    name: 'preserve-dist-keep',
+    apply: 'build',
+    closeBundle() {
+      writeFileSync(resolve(DIST_OUT_DIR, '.keep'), '')
+    }
+  }
+}
+
 export default defineConfig(({ mode }) => {
   // 加载环境变量
   const env = loadEnv(mode, process.cwd(), '')
@@ -46,7 +69,8 @@ export default defineConfig(({ mode }) => {
       checker({
         vueTsc: true
       }),
-      injectPublicSettings(backendUrl)
+      injectPublicSettings(backendUrl),
+      preserveDistKeep()
     ],
   resolve: {
     alias: {
@@ -61,7 +85,7 @@ export default defineConfig(({ mode }) => {
     __INTLIFY_JIT_COMPILATION__: true
   },
   build: {
-    outDir: '../backend/internal/web/dist',
+    outDir: DIST_OUT_DIR,
     emptyOutDir: true,
     rollupOptions: {
       output: {

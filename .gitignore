@@ -28,6 +28,9 @@ vendor/
 # Go 编译缓存
 backend/.gocache/
 
+# ent codegen 瞬时缓存目录（entc 生成期创建、正常结束会自删；中断时可能残留，勿提交）
+backend/ent/schema/.entc/
+
 # ===================
 # Node.js / Vue 前端
 # ===================
