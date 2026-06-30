@@ -64,8 +64,12 @@ RUN go mod download
 # Copy backend source first
 COPY backend/ ./
 
-# The repository ships a checked-in frontend dist under backend/internal/web/dist.
-# Reuse that snapshot during server builds to avoid recompiling the frontend.
+# Embed the frontend built in Stage 1. The checked-in backend/internal/web/dist
+# is only a placeholder (.keep, the real dist is git-ignored), so drop it and
+# overlay Stage 1's fresh build. This makes `-tags embed` ship the frontend that
+# was just compiled from frontend/ in THIS build, never a stale host snapshot.
+RUN rm -rf ./internal/web/dist
+COPY --from=frontend-builder /app/backend/internal/web/dist ./internal/web/dist
 
 # Build the binary (BuildType=release for CI builds, embed frontend)
 # Version precedence: build arg VERSION > cmd/server/VERSION

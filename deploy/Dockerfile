@@ -20,8 +20,10 @@ FROM ${NODE_IMAGE} AS frontend-builder
 WORKDIR /app/frontend
 ENV NODE_OPTIONS=--max-old-space-size=2048
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm (pinned to v9 to match CI and the root Dockerfile; pnpm >=10
+# ignores package.json `pnpm.overrides`, which would drop the form-data CVE
+# override and desync `pnpm install --frozen-lockfile` from the lockfile).
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # Install dependencies first (better caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
@@ -63,8 +65,12 @@ RUN go mod download
 # Copy backend source first
 COPY backend/ ./
 
-# The repository ships a checked-in frontend dist under backend/internal/web/dist.
-# Reuse that snapshot during server builds to avoid recompiling the frontend.
+# Embed the frontend built in Stage 1. The checked-in backend/internal/web/dist
+# is only a placeholder (.keep, the real dist is git-ignored), so drop it and
+# overlay Stage 1's fresh build. This makes `-tags embed` ship the frontend that
+# was just compiled from frontend/ in THIS build, never a stale host snapshot.
+RUN rm -rf ./internal/web/dist
+COPY --from=frontend-builder /app/backend/internal/web/dist ./internal/web/dist
 
 # Build the binary (BuildType=release for CI builds, embed frontend)
 RUN CGO_ENABLED=0 GOOS=linux go build \
