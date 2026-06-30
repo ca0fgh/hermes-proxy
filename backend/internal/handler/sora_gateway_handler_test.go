@@ -93,7 +93,8 @@ func (s *stubSoraClient) GetVideoTask(ctx context.Context, account *service.Acco
 }
 
 type stubAccountRepo struct {
-	accounts map[int64]*service.Account
+	service.AccountRepository // 嵌入接口:未显式实现的方法随上游接口增长自动满足
+	accounts                  map[int64]*service.Account
 }
 
 func (r *stubAccountRepo) Create(ctx context.Context, account *service.Account) error { return nil }
@@ -191,7 +192,7 @@ func (r *stubAccountRepo) ListSchedulableUngroupedByPlatforms(ctx context.Contex
 func (r *stubAccountRepo) SetRateLimited(ctx context.Context, id int64, resetAt time.Time) error {
 	return nil
 }
-func (r *stubAccountRepo) SetModelRateLimit(ctx context.Context, id int64, scope string, resetAt time.Time) error {
+func (r *stubAccountRepo) SetModelRateLimit(ctx context.Context, id int64, scope string, resetAt time.Time, reason ...string) error {
 	return nil
 }
 func (r *stubAccountRepo) SetOverloaded(ctx context.Context, id int64, until time.Time) error {
@@ -436,7 +437,7 @@ func TestSoraGatewayHandler_ChatCompletions(t *testing.T) {
 	deferredService := service.NewDeferredService(accountRepo, nil, 0)
 	billingService := service.NewBillingService(cfg, nil)
 	concurrencyService := service.NewConcurrencyService(testutil.StubConcurrencyCache{})
-	billingCacheService := service.NewBillingCacheService(nil, nil, nil, nil, cfg)
+	billingCacheService := service.NewBillingCacheService(nil, nil, nil, nil, nil, nil, cfg, nil)
 	t.Cleanup(func() {
 		billingCacheService.Stop()
 	})
@@ -465,6 +466,10 @@ func TestSoraGatewayHandler_ChatCompletions(t *testing.T) {
 		nil, // digestStore
 		nil, // settingService
 		nil, // tlsFPProfileService
+		nil, // channelService
+		nil, // resolver
+		nil, // balanceNotifyService
+		nil, // userPlatformQuotaRepo
 	)
 
 	soraClient := &stubSoraClient{imageURLs: []string{"https://example.com/a.png"}}

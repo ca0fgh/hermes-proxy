@@ -104,7 +104,7 @@ LIMIT $`+strconv.Itoa(len(args)-1)+` OFFSET $`+strconv.Itoa(len(args)),
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	out := make([]*service.AuditEvent, 0, filter.PageSize)
 	for rows.Next() {

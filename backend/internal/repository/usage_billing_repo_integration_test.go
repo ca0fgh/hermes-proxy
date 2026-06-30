@@ -256,7 +256,12 @@ func TestUsageBillingRepositoryApply_ResetsFixedDailyQuotaWhenBoundaryPassed(t *
 
 	startAt, err := time.Parse(time.RFC3339, quotaDailyStart)
 	require.NoError(t, err)
-	require.WithinDuration(t, now, startAt, 5*time.Second)
+	// fixed 模式:周期起点对齐到固定每日重置边界(resetHour:00),而非首次使用时刻 now
+	expectedDailyStart := time.Date(now.Year(), now.Month(), now.Day(), int(resetHour), 0, 0, 0, time.UTC)
+	if expectedDailyStart.After(now) {
+		expectedDailyStart = expectedDailyStart.AddDate(0, 0, -1)
+	}
+	require.WithinDuration(t, expectedDailyStart, startAt, 5*time.Second)
 
 	resetAt, err := time.Parse(time.RFC3339, quotaDailyResetAt)
 	require.NoError(t, err)
@@ -462,7 +467,12 @@ func TestUsageBillingRepositoryApply_ResetsFixedWeeklyQuotaWhenBoundaryPassed(t 
 
 	startAt, err := time.Parse(time.RFC3339, quotaWeeklyStart)
 	require.NoError(t, err)
-	require.WithinDuration(t, now, startAt, 5*time.Second)
+	// fixed 模式:周期起点对齐到固定每周重置边界(resetDay/resetHour),而非首次使用时刻 now
+	expectedWeeklyStart := time.Date(now.Year(), now.Month(), now.Day(), int(resetHour), 0, 0, 0, time.UTC)
+	if expectedWeeklyStart.After(now) {
+		expectedWeeklyStart = expectedWeeklyStart.AddDate(0, 0, -7)
+	}
+	require.WithinDuration(t, expectedWeeklyStart, startAt, 5*time.Second)
 
 	resetAt, err := time.Parse(time.RFC3339, quotaWeeklyResetAt)
 	require.NoError(t, err)

@@ -436,15 +436,15 @@ URL バリデーションまたはレスポンスヘッダーフィルタリン�
 
 **管理者アカウントを作成する 2 つの方法:**
 
-1. **推奨 — ウィザードに `config.yaml` を自動生成させる:** 上記ステップ 5 をスキップします（`cp` を実行しない）。`./sub2api` を直接起動し、`http://localhost:8080` にアクセスすると、セットアップウィザードがデータベース・Redis・管理者アカウントの設定を案内し、`config.yaml` を自動生成します。
+1. **推奨 — ウィザードに `config.yaml` を自動生成させる:** 上記ステップ 5 をスキップします（`cp` を実行しない）。`./hermes-proxy` を直接起動し、`http://localhost:8080` にアクセスすると、セットアップウィザードがデータベース・Redis・管理者アカウントの設定を案内し、`config.yaml` を自動生成します。
 
 2. **すでに `config.yaml` を作成してしまった場合:** 初回起動前に一時的に退避してウィザードを発生させ、完了後に戻します:
    ```bash
    mv config.yaml config.yaml.bak
-   ./sub2api        # ウィザードが http://localhost:8080 で起動し、新しい config.yaml を生成します
+   ./hermes-proxy        # ウィザードが http://localhost:8080 で起動し、新しい config.yaml を生成します
    # ウィザード完了後、Ctrl+C でサーバーを停止し、設定を復元します:
    mv config.yaml.bak config.yaml
-   ./sub2api        # 通常モードで再起動し、作成した管理者でログインします
+   ./hermes-proxy        # 通常モードで再起動し、作成した管理者でログインします
    ```
 
 ```bash

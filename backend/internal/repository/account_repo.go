@@ -2033,25 +2033,6 @@ const quotaDailyLimitEnabledExpr = `COALESCE(NULLIF(extra->>'quota_daily_limit',
 // explicit reset mode as fixed midnight reset. Explicit rolling still opt-outs.
 const dailyFixedResetModeExpr = `(extra->>'quota_daily_reset_mode' = 'fixed' OR (extra->>'quota_daily_reset_mode' IS NULL AND ` + quotaDailyLimitEnabledExpr + `))`
 
-// dailyExpiredExpr is a SQL expression that evaluates to TRUE when daily quota period has expired.
-// Supports both rolling (24h from start) and fixed (pre-computed reset_at) modes.
-const dailyExpiredExpr = `(
-	CASE WHEN ` + dailyFixedResetModeExpr + `
-	THEN NOW() >= COALESCE((extra->>'quota_daily_reset_at')::timestamptz, '1970-01-01'::timestamptz)
-	ELSE COALESCE((extra->>'quota_daily_start')::timestamptz, '1970-01-01'::timestamptz)
-		+ '24 hours'::interval <= NOW()
-	END
-)`
-
-// weeklyExpiredExpr is a SQL expression that evaluates to TRUE when weekly quota period has expired.
-const weeklyExpiredExpr = `(
-	CASE WHEN COALESCE(extra->>'quota_weekly_reset_mode', 'rolling') = 'fixed'
-	THEN NOW() >= COALESCE((extra->>'quota_weekly_reset_at')::timestamptz, '1970-01-01'::timestamptz)
-	ELSE COALESCE((extra->>'quota_weekly_start')::timestamptz, '1970-01-01'::timestamptz)
-		+ '168 hours'::interval <= NOW()
-	END
-)`
-
 // currentDailyWindowStartTsExpr computes the start timestamp of the current fixed daily window.
 const currentDailyWindowStartTsExpr = `(
 	CASE WHEN NOW() >= (

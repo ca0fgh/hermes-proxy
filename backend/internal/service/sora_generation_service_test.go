@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ca0fgh/hermes-proxy/internal/pkg/pagination"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
 
@@ -120,8 +120,9 @@ func (r *stubGenRepo) CountByUserAndStatus(_ context.Context, userID int64, stat
 var _ UserRepository = (*stubUserRepoForQuota)(nil)
 
 type stubUserRepoForQuota struct {
-	users     map[int64]*User
-	updateErr error
+	UserRepository // 嵌入接口:未显式实现的方法随上游接口增长自动满足(被调用即 panic)
+	users          map[int64]*User
+	updateErr      error
 }
 
 func newStubUserRepoForQuota() *stubUserRepoForQuota {

@@ -439,15 +439,15 @@ Because step 5 above pre-creates `config.yaml`, the setup wizard will be **skipp
 
 **Two ways to create the admin account:**
 
-1. **Recommended — let the wizard generate `config.yaml`:** Skip step 5 (do not run the `cp`). Start `./sub2api` directly; the setup wizard at `http://localhost:8080` walks you through database, Redis, and admin account setup, then writes `config.yaml` for you.
+1. **Recommended — let the wizard generate `config.yaml`:** Skip step 5 (do not run the `cp`). Start `./hermes-proxy` directly; the setup wizard at `http://localhost:8080` walks you through database, Redis, and admin account setup, then writes `config.yaml` for you.
 
 2. **If you already created `config.yaml`:** Temporarily move it aside so the wizard can trigger on first run, then restore it afterwards:
    ```bash
    mv config.yaml config.yaml.bak
-   ./sub2api        # wizard runs at http://localhost:8080 and writes a fresh config.yaml
+   ./hermes-proxy        # wizard runs at http://localhost:8080 and writes a fresh config.yaml
    # stop the server (Ctrl+C) once the wizard completes, then restore your config:
    mv config.yaml.bak config.yaml
-   ./sub2api        # restart in normal mode and log in with the admin you just created
+   ./hermes-proxy        # restart in normal mode and log in with the admin you just created
    ```
 
 ```bash
@@ -491,7 +491,7 @@ Simple Mode is designed for individual developers or internal teams who want qui
 
 ## Grok / xAI OAuth Support
 
-Sub2API supports Grok subscription accounts through xAI OAuth and forwards OpenAI-compatible Responses traffic to xAI.
+hermes-proxy supports Grok subscription accounts through xAI OAuth and forwards OpenAI-compatible Responses traffic to xAI.
 
 ### Supported Scope
 
@@ -527,7 +527,7 @@ Credential storage reuses the existing account JSON fields: `access_token`, `ref
 
 ### Usage And Quota Display
 
-xAI quota is passive. Sub2API does not invent subscription quota values; it records whitelisted xAI rate-limit headers from successful or rate-limited upstream responses when xAI sends them. Before the first usable upstream response, the dashboard shows quota as unknown and still displays local Sub2API usage stats.
+xAI quota is passive. hermes-proxy does not invent subscription quota values; it records whitelisted xAI rate-limit headers from successful or rate-limited upstream responses when xAI sends them. Before the first usable upstream response, the dashboard shows quota as unknown and still displays local hermes-proxy usage stats.
 
 `401` responses mark the account as needing reauthorization. `403` responses are treated as entitlement or subscription-tier failures instead of token-refresh loops. `429` responses use `Retry-After` or a short cooldown to temporarily remove the account from scheduling.
 

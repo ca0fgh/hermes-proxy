@@ -231,7 +231,7 @@ func (s *AuditService) sendAlertWebhook(ctx context.Context, event *AuditEvent) 
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return infraerrors.BadRequest("AUDIT_WEBHOOK_FAILED", "Audit webhook returned non-2xx")
 	}
@@ -331,9 +331,7 @@ func extractAuditToolCallsFromSSE(raw []byte) []AuditToolCall {
 				continue
 			}
 
-			for _, tc := range extractAuditToolCallsFromJSON([]byte(payload)) {
-				out = append(out, tc)
-			}
+			out = append(out, extractAuditToolCallsFromJSON([]byte(payload))...)
 
 			for _, choice := range gjson.Get(payload, "choices").Array() {
 				for _, tc := range choice.Get("delta.tool_calls").Array() {
@@ -347,7 +345,7 @@ func extractAuditToolCallsFromSSE(raw []byte) []AuditToolCall {
 						entry.Name = name
 					}
 					if args := tc.Get("function.arguments").String(); args != "" {
-						entry.Args.WriteString(args)
+						_, _ = entry.Args.WriteString(args)
 					}
 				}
 			}
@@ -396,7 +394,7 @@ func extractAuditToolCallsFromSSE(raw []byte) []AuditToolCall {
 						builder = &strings.Builder{}
 						anthropicInputBuffers[idx] = builder
 					}
-					builder.WriteString(gjson.Get(payload, "delta.partial_json").String())
+					_, _ = builder.WriteString(gjson.Get(payload, "delta.partial_json").String())
 					flushAnthropicBuilder(idx)
 				}
 			}
