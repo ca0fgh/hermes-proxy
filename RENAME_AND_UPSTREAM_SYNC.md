@@ -183,6 +183,16 @@ rg -n --hidden --glob '!.git' '([sS][uU][bB]2[aA][pP][iI])'
 
 - 与上游合并后，凡是回流进当前项目代码、文档、脚本、测试里的 `sub2api`，都替换为 `hermes-proxy`
 
+但以下几类 `sub2api` 是**协议/历史兼容值，必须原样保留**（替换会改变线上行为或破坏向后兼容），命名回归检查时应跳过：
+
+- grok / xai 的 wire User-Agent，如 `sub2api-grok/1.0`、`sub2api-grok-oauth/1.0`、`sub2api-grok-quota-probe/1.0`（xAI 侧可能据此识别/白名单）
+- xai OAuth 授权 URL 的 `referrer=sub2api` 取值（`internal/pkg/xai/oauth.go`，与上述 wire UA 同类，改动可能断 authorize 流程）
+- 历史 prompt 标记 `<sub2api-...>` 及描述它们的注释（legacy 客户端仍可能发送）
+- account_data 的历史导出类型标识 `sub2api-data` / `sub2api-bundle`（导入旧备份需兼容接受）
+- 前端 LEGACY localStorage 键 `sub2api_login_agreement_consent`（改键名会让老用户重新弹同意框）
+- 外部支付项目 Sub2ApiPay（`touwaeriol/sub2apipay`）的文档引用（是独立第三方项目名）
+- 引用上游 `Wei-Shaw/sub2api` issue / 来源的注释（事实性溯源，改成 hermes-proxy 反而不准确）
+
 如果 merge 成功且验证通过，再推送：
 
 ```bash

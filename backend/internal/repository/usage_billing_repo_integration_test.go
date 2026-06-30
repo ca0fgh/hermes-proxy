@@ -266,6 +266,87 @@ func TestUsageBillingRepositoryApply_ResetsFixedDailyQuotaWhenBoundaryPassed(t *
 	resetAt, err := time.Parse(time.RFC3339, quotaDailyResetAt)
 	require.NoError(t, err)
 	require.True(t, resetAt.After(now))
+	// 收紧:fixed 模式下 reset_at 应恰好是周期起点 + 24h,锁定 [start, reset_at) 干净 24h 窗口
+	// 不变式(仅 resetAt.After(now) 会放过 start 与 reset_at 计算漂移导致的错配窗口)。
+	require.WithinDuration(t, expectedDailyStart.Add(24*time.Hour), resetAt, 5*time.Second)
+}
+
+// 覆盖生产默认时区 Asia/Shanghai(UTC+8,无 DST):上面的 daily 用例把 quota_reset_timezone 固定为
+// UTC,不会触及生产 currentDailyWindowStartTsExpr 的 AT TIME ZONE 配置时区路径。本用例以不变式断言
+// (而非手算 PG 边界值)验证固定每日窗口在非 UTC 时区下仍正确对齐到本地 resetHour:00 边界——若生产
+// 误用 UTC 而非配置时区计算边界,周期起点的本地小时会偏移 8 小时,不变式 3 即可抓出。
+func TestUsageBillingRepositoryApply_RecomputesFixedDailyWindowStart_NonUTCTimezone(t *testing.T) {
+	ctx := context.Background()
+	client := testEntClient(t)
+	repo := NewUsageBillingRepository(client, integrationDB)
+
+	user := mustCreateUser(t, client, &service.User{
+		Email:        fmt.Sprintf("usage-billing-fixed-daily-tz-%d@example.com", time.Now().UnixNano()),
+		PasswordHash: "hash",
+	})
+	apiKey := mustCreateApiKey(t, client, &service.APIKey{
+		UserID: user.ID,
+		Key:    "sk-usage-billing-fixed-daily-tz-" + uuid.NewString(),
+		Name:   "billing-fixed-daily-tz",
+	})
+
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	require.NoError(t, err)
+	now := time.Now().UTC().Truncate(time.Second)
+	nowLocal := now.In(loc)
+	// resetHour 取本地"上一个小时",确保固定边界落在过去 → reset_at 已过 → 触发重新计算窗口起点
+	resetHour := float64((nowLocal.Hour() + 23) % 24)
+	account := mustCreateAccount(t, client, &service.Account{
+		Name: "usage-billing-fixed-daily-tz-" + uuid.NewString(),
+		Type: service.AccountTypeAPIKey,
+		Extra: map[string]any{
+			"quota_daily_limit":      120.0,
+			"quota_daily_used":       3.03,
+			"quota_daily_start":      now.Add(-2 * time.Hour).Format(time.RFC3339),
+			"quota_daily_reset_mode": "fixed",
+			"quota_daily_reset_hour": resetHour,
+			"quota_reset_timezone":   "Asia/Shanghai",
+			"quota_daily_reset_at":   now.Add(-1 * time.Minute).Format(time.RFC3339),
+		},
+	})
+
+	_, err = repo.Apply(ctx, &service.UsageBillingCommand{
+		RequestID:        uuid.NewString(),
+		APIKeyID:         apiKey.ID,
+		UserID:           user.ID,
+		AccountID:        account.ID,
+		AccountType:      service.AccountTypeAPIKey,
+		AccountQuotaCost: 0.94,
+	})
+	require.NoError(t, err)
+
+	var quotaDailyStart string
+	var quotaDailyResetAt string
+	require.NoError(t, integrationDB.QueryRowContext(ctx, `
+		SELECT
+			COALESCE(extra->>'quota_daily_start', ''),
+			COALESCE(extra->>'quota_daily_reset_at', '')
+		FROM accounts
+		WHERE id = $1
+	`, account.ID).Scan(&quotaDailyStart, &quotaDailyResetAt))
+
+	startAt, err := time.Parse(time.RFC3339, quotaDailyStart)
+	require.NoError(t, err)
+	resetAt, err := time.Parse(time.RFC3339, quotaDailyResetAt)
+	require.NoError(t, err)
+
+	// 不变式 1:窗口恰好 24h(reset_at = start + 24h)
+	require.WithinDuration(t, startAt.Add(24*time.Hour), resetAt, 5*time.Second)
+	// 不变式 2:now 落在 [start, reset_at) 内
+	require.False(t, startAt.After(now), "周期起点应 ≤ now")
+	require.True(t, resetAt.After(now), "reset_at 应 > now")
+	// 不变式 3:周期起点对齐到 Asia/Shanghai 本地 resetHour:00 边界(本地小时=resetHour、分秒=0)
+	startLocal := startAt.In(loc)
+	require.Equal(t, int(resetHour), startLocal.Hour(), "周期起点本地小时应等于 resetHour")
+	require.Equal(t, 0, startLocal.Minute(), "周期起点本地分钟应为 0")
+	require.Equal(t, 0, startLocal.Second(), "周期起点本地秒应为 0")
+	// 不变式 4:start 是"最近"的边界(在过去 24h 内),而非更早某次
+	require.False(t, startAt.Before(now.Add(-24*time.Hour)), "周期起点应是最近一个固定边界")
 }
 
 func TestUsageBillingRepositoryApply_EnqueuesSchedulerOutboxOnQuotaCrossing(t *testing.T) {
@@ -477,6 +558,8 @@ func TestUsageBillingRepositoryApply_ResetsFixedWeeklyQuotaWhenBoundaryPassed(t 
 	resetAt, err := time.Parse(time.RFC3339, quotaWeeklyResetAt)
 	require.NoError(t, err)
 	require.True(t, resetAt.After(now))
+	// 收紧:fixed 模式下 reset_at 应恰好是周期起点 + 168h(7d),锁定 [start, reset_at) 干净周窗口不变式。
+	require.WithinDuration(t, expectedWeeklyStart.Add(7*24*time.Hour), resetAt, 5*time.Second)
 }
 
 func TestUsageBillingRepositoryApply_RepairsStaleFixedWeeklyWindowEvenWhenResetAtIsFuture(t *testing.T) {
