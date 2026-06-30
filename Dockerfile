@@ -21,8 +21,11 @@ FROM ${NODE_IMAGE} AS frontend-builder
 WORKDIR /app/frontend
 ENV NODE_OPTIONS=--max-old-space-size=2048
 
-# Install pnpm (pinned to v9 to match CI and keep builds reproducible)
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# Install pnpm. Pin the exact version to match package.json's `packageManager`
+# field (and the lockfile), so corepack never silently drifts within 9.x. CI
+# (pnpm/action-setup version:9) stays compatible — frozen-lockfile guarantees an
+# identical install regardless of the 9.x patch.
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 # Install dependencies first (better caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./

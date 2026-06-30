@@ -92,16 +92,22 @@ upstream <已配置的原始上游仓库地址>
 
 ```bash
 cd /Users/money/project/subproject/hermes-proxy/backend
-go test ./...
+# 注意：裸 `go test ./...` 只覆盖 untagged 包，不是「全量」。
+# 完整全量验证见 §5「合并后必须跑的完整验证矩阵」。
+make test-unit               # = go test -tags=unit ./...
+make test-integration        # = go test -tags=integration ./...（testcontainers 起 PG/Redis）
+go build -tags embed ./...   # 出货编译路径（需先填充 backend/internal/web/dist）
 
 cd /Users/money/project/subproject/hermes-proxy/frontend
-pnpm typecheck
+corepack prepare pnpm@9.15.9 --activate
+pnpm install --frozen-lockfile && pnpm run build   # 比 typecheck 严
 ```
 
 验证结果：
 
-- backend 全量测试通过
-- frontend 类型检查通过
+- backend：untagged / `-tags=unit` / `-tags=integration` / `-tags=embed` 编译与测试均通过
+- backend：golangci-lint v2.9 + `gofmt -l .` 无问题，`go mod tidy` 无漂移
+- frontend：`pnpm install --frozen-lockfile` + `pnpm run build`（含 vue-tsc 类型检查）通过
 
 当前仓库状态：
 
@@ -192,6 +198,36 @@ rg -n --hidden --glob '!.git' '([sS][uU][bB]2[aA][pP][iI])'
 - 前端 LEGACY localStorage 键 `sub2api_login_agreement_consent`（改键名会让老用户重新弹同意框）
 - 外部支付项目 Sub2ApiPay（`touwaeriol/sub2apipay`）的文档引用（是独立第三方项目名）
 - 引用上游 `Wei-Shaw/sub2api` issue / 来源的注释（事实性溯源，改成 hermes-proxy 反而不准确）
+
+合并后必须跑的**完整验证矩阵**（裸 `go test ./...` 只是其中一个子集，绝不能单独作为「全量通过」依据——它从不编译 `-tags=embed` 出货路径，也不含 unit / integration 套件，历史上正是这一点掩盖了 HEAD 即存在的 pre-existing RED）：
+
+```bash
+cd backend
+
+# 1) 各 build-tag 维度（CI backend-ci.yml 实跑 unit + integration）
+go build ./... && go vet ./... && go test ./...   # untagged 基线（子集）
+make test-unit            # = go test -tags=unit ./...
+make test-integration     # = go test -tags=integration ./...（testcontainers 起 PG/Redis）
+go vet -tags=e2e ./...    # 仅编译校验；真跑用 make test-e2e（需活服务）
+
+# 2) 出货编译路径（embed）。dist 被 .gitignore 仅留 .keep 占位，裸跑会嵌空壳；
+#    须先构建前端落进 backend/internal/web/dist，或直接 docker build（端到端）。
+go build -tags embed ./... && go test -tags=embed ./internal/web/...
+
+# 3) lint / 格式 / 依赖（CI 用 golangci-lint v2.9，独立 job）
+golangci-lint run --timeout=30m
+gofmt -l .                # golangci 默认跳 _test.go；改名易乱 import 字母序，须手补
+go mod tidy               # 不应产生 go.mod / go.sum 漂移
+
+# 4) （可选）数据竞争
+go test -race ./...
+
+# 5) 前端（比 typecheck 严）
+cd ../frontend && corepack prepare pnpm@9.15.9 --activate
+pnpm install --frozen-lockfile && pnpm run build
+```
+
+本地一键重建并自检：`python3 tools/restart.py`（docker build → 起本地 compose 栈 → `/health`）。
 
 如果 merge 成功且验证通过，再推送：
 

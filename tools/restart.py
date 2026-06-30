@@ -8,7 +8,8 @@ PostgreSQL/Redis, run the binary). Instead it:
 
   1. builds the Docker image `hermes-proxy-local:latest` from the repo, and
   2. brings up the docker-compose stack defined under `deploy/`
-     (`docker-compose.local.yml` + `docker-compose.local.override.yml`,
+     (`docker-compose.local.yml`, plus an optional, gitignored
+     `docker-compose.local.override.yml` that is auto-applied when present;
      project name `hermes-proxy`) waiting until containers are healthy.
 
 Usage:
@@ -33,10 +34,14 @@ DEPLOY_DIR = REPO_ROOT / "deploy"
 VERSION_FILE = REPO_ROOT / "backend" / "cmd" / "server" / "VERSION"
 ENV_FILE = DEPLOY_DIR / ".env"
 
-# Compose files are layered: the base local stack + the local override that
-# pins locally-available images (this host can't reach Docker Hub) and maps a
-# loopback postgres port. Keep this in sync with the deploy/ directory.
-COMPOSE_FILES = ("docker-compose.local.yml", "docker-compose.local.override.yml")
+# The base local stack is always applied. An optional, gitignored per-host
+# override (docker-compose.local.override.yml) is layered on top ONLY when it
+# exists on disk — the same convention as docker-compose.override.yml. A fresh
+# clone without it uses the images pinned in the base file; a machine that needs
+# host-specific tweaks (e.g. locally-cached image tags, a loopback DB port) drops
+# in its own override without that single-host hack being committed for everyone.
+BASE_COMPOSE_FILE = "docker-compose.local.yml"
+OVERRIDE_COMPOSE_FILE = "docker-compose.local.override.yml"
 PROJECT_NAME = "hermes-proxy"
 IMAGE_TAG = "hermes-proxy-local:latest"
 DEFAULT_WAIT_TIMEOUT = 180
@@ -128,9 +133,17 @@ def git_commit() -> str:
     return result.stdout.strip() if result.returncode == 0 and result.stdout.strip() else "docker"
 
 
+def compose_files() -> list[str]:
+    """Base stack plus the optional per-host override (included only if present)."""
+    files = [BASE_COMPOSE_FILE]
+    if (DEPLOY_DIR / OVERRIDE_COMPOSE_FILE).exists():
+        files.append(OVERRIDE_COMPOSE_FILE)
+    return files
+
+
 def compose_base_command(docker_bin: str) -> list[str]:
     command = [docker_bin, "compose"]
-    for compose_file in COMPOSE_FILES:
+    for compose_file in compose_files():
         command.extend(["-f", str(DEPLOY_DIR / compose_file)])
     command.extend(["-p", PROJECT_NAME])
     return command
@@ -157,10 +170,9 @@ def collect_preflight_issues(docker_bin: str) -> list[str]:
     if compose.returncode != 0:
         issues.append("`docker compose`: v2 plugin not available (`docker compose version` failed)")
 
-    for compose_file in COMPOSE_FILES:
-        path = DEPLOY_DIR / compose_file
-        if not path.exists():
-            issues.append(f"`{path}`: compose file not found")
+    base_path = DEPLOY_DIR / BASE_COMPOSE_FILE
+    if not base_path.exists():
+        issues.append(f"`{base_path}`: compose file not found")
 
     if not ENV_FILE.exists():
         issues.append(

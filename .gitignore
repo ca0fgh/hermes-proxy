@@ -132,8 +132,16 @@ code-reviews/
 AGENTS.md
 backend/cmd/server/server
 deploy/docker-compose.override.yml
+# Per-host local stack override (auto-applied by tools/restart.py when present).
+# Single-machine workaround (e.g. pinning locally-cached image tags); must NOT be
+# distributed, or it silently overrides the base stack's pinned images everywhere.
+deploy/docker-compose.local.override.yml
 .gocache/
 vite.config.js
+
+# Python bytecode (e.g. tools/*.py caches); never commit compiled caches.
+__pycache__/
+*.pyc
 docs/*
 !docs/PAYMENT.md
 !docs/PAYMENT_CN.md

@@ -31,6 +31,12 @@ Thumbs.db
 dist/
 build/
 
+# Stale local vite config compiled from vite.config.ts (gitignored leftovers).
+# If present in the build context they'd shadow the tracked vite.config.ts inside
+# the image (Vite prefers .js over .ts). Never copy them.
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
 # Node modules (will be installed in container)
 frontend/node_modules/
 node_modules/

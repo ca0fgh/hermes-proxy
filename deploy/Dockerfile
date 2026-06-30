@@ -20,10 +20,11 @@ FROM ${NODE_IMAGE} AS frontend-builder
 WORKDIR /app/frontend
 ENV NODE_OPTIONS=--max-old-space-size=2048
 
-# Install pnpm (pinned to v9 to match CI and the root Dockerfile; pnpm >=10
-# ignores package.json `pnpm.overrides`, which would drop the form-data CVE
-# override and desync `pnpm install --frozen-lockfile` from the lockfile).
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# Install pnpm. Pin the exact version to match package.json's `packageManager`
+# field, the lockfile, and the root Dockerfile. pnpm >=10 ignores package.json
+# `pnpm.overrides` (dropping the form-data CVE override and desyncing
+# `pnpm install --frozen-lockfile` from the lockfile), so the 9.x pin is load-bearing.
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 # Install dependencies first (better caching)
 COPY frontend/package.json frontend/pnpm-lock.yaml ./

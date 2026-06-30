@@ -80,16 +80,29 @@ class ReadEnvValueTest(unittest.TestCase):
 
 
 class ComposeCommandTest(unittest.TestCase):
-    def test_base_command_includes_both_files_and_project(self):
+    def test_base_command_includes_base_file_and_project(self):
         command = restart.compose_base_command("/usr/bin/docker")
 
         self.assertEqual(["/usr/bin/docker", "compose"], command[:2])
         self.assertIn("-p", command)
         self.assertIn(restart.PROJECT_NAME, command)
-        self.assertEqual(2, command.count("-f"))
-        joined = " ".join(command)
-        for compose_file in restart.COMPOSE_FILES:
-            self.assertIn(compose_file, joined)
+        self.assertIn(restart.BASE_COMPOSE_FILE, " ".join(command))
+
+    def test_override_layered_only_when_present(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            deploy_dir = Path(tmpdir)
+            (deploy_dir / restart.BASE_COMPOSE_FILE).write_text("services: {}\n", encoding="utf-8")
+            with mock.patch.object(restart, "DEPLOY_DIR", deploy_dir):
+                # Override absent -> base only.
+                absent = restart.compose_base_command("/usr/bin/docker")
+                self.assertEqual(1, absent.count("-f"))
+                self.assertNotIn(restart.OVERRIDE_COMPOSE_FILE, " ".join(absent))
+
+                # Override present -> layered on top of the base.
+                (deploy_dir / restart.OVERRIDE_COMPOSE_FILE).write_text("services: {}\n", encoding="utf-8")
+                present = restart.compose_base_command("/usr/bin/docker")
+                self.assertEqual(2, present.count("-f"))
+                self.assertIn(restart.OVERRIDE_COMPOSE_FILE, " ".join(present))
 
     def test_compose_up_builds_wait_command(self):
         with mock.patch.object(restart, "run_command") as run_command:
@@ -124,8 +137,7 @@ class CollectPreflightIssuesTest(unittest.TestCase):
     def test_no_issues_when_everything_present(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             deploy_dir = Path(tmpdir)
-            for compose_file in restart.COMPOSE_FILES:
-                (deploy_dir / compose_file).write_text("services: {}\n", encoding="utf-8")
+            (deploy_dir / restart.BASE_COMPOSE_FILE).write_text("services: {}\n", encoding="utf-8")
             (deploy_dir / ".env").write_text("POSTGRES_PASSWORD=x\n", encoding="utf-8")
 
             with mock.patch.object(restart, "DEPLOY_DIR", deploy_dir):
