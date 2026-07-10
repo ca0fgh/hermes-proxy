@@ -652,8 +652,10 @@ import { useClipboard } from '@/composables/useClipboard'
 import Icon from '@/components/icons/Icon.vue'
 
 const GITHUB_REPO = 'ca0fgh/hermes-proxy'
-// Docker Hub image published by CI (tags carry no "v" prefix, e.g. ca0fgh/hermes-proxy:0.1.149)
-const DOCKER_IMAGE = 'ca0fgh/hermes-proxy'
+// 真值源是 .goreleaser.yaml 的 docker_manifests。Docker Hub 那组的名字来自
+// ${DOCKERHUB_USERNAME} secret(未配置时整组跳过),只有 GHCR 这组由 GITHUB_TOKEN
+// 无条件推送,因此本仓唯一确定会存在的镜像是它。tag 不带 "v" 前缀,如 :0.1.149。
+const DOCKER_IMAGE = 'ghcr.io/ca0fgh/hermes-proxy'
 
 const { t } = useI18n()
 
