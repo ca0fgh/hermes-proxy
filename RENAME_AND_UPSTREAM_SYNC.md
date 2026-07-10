@@ -378,7 +378,19 @@ A/B/C 校验的是**这次合并**，不是**这个 fork**。判据「行存在�
 会把「fork 早年删错的上游代码」一律放行——因为它确实存在于 BASE。
 
 所以还需要方向 **D：上游有、而 fork 删掉的代码**（`BASE ∩ upstream` 但不在 fork）。
-这个集合是历次改名/魔改的沉积层，合并流程永远不会重新审视它。实测捞出：
+这个集合是历次改名/魔改的沉积层，合并流程永远不会重新审视它。
+
+**D 的规模与筛法**：v0.1.149 实测 326 行 / 175 文件，不可能逐行看。两层筛：
+
+1. **按危险模式**过滤（`return fmt.Errorf` / `errors.New` / `require.` / `panic` /
+   `validate|verify|check` / `forbidden|unauthorized|csrf|token|checksum|rate.?limit`）
+   → 17 行，逐条读完。修了 2 处（见下），其余是 fork 的改进或有意差异。
+2. **按结构性删除**过滤（`^func ` / `router.|.Use(|.Group(|.GET(...` / `SettingKey` / wire provider）
+   → 再用**集合对比**证明没丢东西，这比读 diff 可靠：
+   - 路由：上游 367 条，本仓 378 条，**上游独有 0**（多出的 11 条是 fork 特性）
+   - `handler`/`service` 构造器、`middleware` 导出函数：**上游独有各 0**
+
+D 捞出的东西：
 
 - `migrations_runner.go`：上游 checksum 不匹配时 `return fmt.Errorf(...)` 硬失败；
   本仓在改名大提交 2cece2b8 里换成了静默 `UPDATE schema_migrations SET checksum=…; continue`，
@@ -388,6 +400,39 @@ A/B/C 校验的是**这次合并**，不是**这个 fork**。判据「行存在�
   **注意测试为什么拦不住**：`migrations_runner_checksum_test.go` 测的是
   `isMigrationChecksumCompatible` 这个**谓词**，而不是谓词所把守的**行为**，
   所以行为被改掉之后整个套件依旧全绿。
+
+- `.github/workflows/backend-ci.yml`：本仓删掉了上游整个 `frontend` job
+  （pnpm + `make test-frontend`）。`release.yml` 只在发版时 `pnpm run build`，
+  **vitest 从不运行** ⇒ 前端测试在 PR/push 上结构性地跑不到。已恢复。
+  连带两点：`test` job 丢了 `cache-dependency-path: backend/go.sum`（go.sum 在
+  `backend/` 下，不指路径缓存永不命中）；CI 只跑 `FRONTEND_CRITICAL_VITEST`
+  子集（924 个测试里 91 个），**跨前后端契约的回归测试必须显式列进去**，
+  否则改坏了 CI 依旧全绿。
+
+- `AdminComplianceGuard`：上游在 `admin.go` / `payment.go` / `page_handler.go`
+  三处 `.Use(...)`，本仓全部摘除。这是**有意的产品决定**（测试也改名为
+  `…DisabledAllowsAdminRoute`），但那条注释写的「Guard 为 no-op」是错的：
+  函数体原样保留着返回 `423 ADMIN_COMPLIANCE_ACK_REQUIRED` 的完整逻辑，
+  真实机制是**它一次都没被挂载**（现在是导出的死代码，lint 不报）。
+
+#### 恢复上游行为时的顺序陷阱
+
+**先修死规则，再恢复硬失败**，反了就是给生产埋雷。
+
+`migrationChecksumCompatibilityRules` 里 13 条有 **5 条是死规则**（109/110/112/118/123）：
+`isMigrationChecksumCompatible` 要求 db 与 file 两个 checksum **同时**落在集合内，
+而这几条的 `fileChecksum` 与当前文件对不上（上游改了迁移文件却忘了同步规则值，
+四棵树内容一致 ⇒ **上游既有缺陷**），因此永不放行。在 auto-fix 时代这毫无症状；
+一旦恢复硬失败，凡 db 里存着历史 checksum 的老库**启动即失败**。
+
+真机 PG 反证（把规则退回死规则状态）：
+`migration 109_… checksum mismatch (db=551e498a… file=2b380305…)`，
+而上游原有的两个单测（纯谓词 + `CoverEdited`）在同一状态下**照样全绿**。
+
+因此加了守卫 `TestMigrationChecksumCompatibilityRulesMatchCurrentFiles`：
+每条规则的 `fileChecksum` 必须等于当前文件的 `sha256(TrimSpace(content))`。
+checksum 用 Go 的语义算（先 TrimSpace 再 hash），可拿规则表里已有的
+054/120/159/161 四条做自校验，确认算法没搞错再去算新值。
 
 ### 5.4.2 改名回归的两类「值字面量」——方向相反，别搞反
 
