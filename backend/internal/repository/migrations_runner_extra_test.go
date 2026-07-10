@@ -13,6 +13,8 @@ import (
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ca0fgh/hermes-proxy/migrations"
 )
 
 func TestApplyMigrations_NilDB(t *testing.T) {
@@ -237,7 +239,9 @@ func TestEnsureAtlasBaselineAligned(t *testing.T) {
 	})
 }
 
-func TestApplyMigrationsFS_ChecksumMismatchAutoFixesForLocalDev(t *testing.T) {
+// 迁移不可变性必须硬失败:静默改写 schema_migrations 的 checksum 会让各环境无声分叉。
+// 白名单规则是唯一的放行口,且必须「迁移名 + db checksum + 文件 checksum」三者同时命中。
+func TestApplyMigrationsFS_ChecksumMismatchRejected(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer func() { _ = db.Close() }()
@@ -246,9 +250,6 @@ func TestApplyMigrationsFS_ChecksumMismatchAutoFixesForLocalDev(t *testing.T) {
 	mock.ExpectQuery("SELECT checksum FROM schema_migrations WHERE filename = \\$1").
 		WithArgs("001_init.sql").
 		WillReturnRows(sqlmock.NewRows([]string{"checksum"}).AddRow("mismatched-checksum"))
-	mock.ExpectExec("UPDATE schema_migrations SET checksum = \\$1 WHERE filename = \\$2").
-		WithArgs(sqlmock.AnyArg(), "001_init.sql").
-		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectExec("SELECT pg_advisory_unlock\\(\\$1\\)").
 		WithArgs(migrationsAdvisoryLockID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -257,8 +258,65 @@ func TestApplyMigrationsFS_ChecksumMismatchAutoFixesForLocalDev(t *testing.T) {
 		"001_init.sql": &fstest.MapFile{Data: []byte("CREATE TABLE t(id int);")},
 	}
 	err = applyMigrationsFS(context.Background(), db, fsys)
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "checksum mismatch")
 	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+// 不匹配时绝不能再去 UPDATE schema_migrations:sqlmock 未登记该 Exec,
+// 一旦代码退回「静默改写」,ExpectationsWereMet 立刻变红。
+func TestApplyMigrationsFS_ChecksumMismatchNeverRewritesStoredChecksum(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	prepareMigrationsBootstrapExpectations(mock)
+	mock.ExpectQuery("SELECT checksum FROM schema_migrations WHERE filename = \\$1").
+		WithArgs("004_add_redeem_code_notes.sql").
+		WillReturnRows(sqlmock.NewRows([]string{"checksum"}).AddRow("stale-db-checksum"))
+	mock.ExpectExec("SELECT pg_advisory_unlock\\(\\$1\\)").
+		WithArgs(migrationsAdvisoryLockID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	fsys := fstest.MapFS{
+		"004_add_redeem_code_notes.sql": &fstest.MapFile{Data: []byte("SELECT 1;")},
+	}
+	err = applyMigrationsFS(context.Background(), db, fsys)
+	require.Error(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+// 每条兼容规则的 fileChecksum 必须等于**当前文件**的 checksum,否则 fileOK 恒 false、
+// 规则永不放行 = 死规则,而老库升级时正指望它放行。上游有 5 条(109/110/112/118/123)
+// 因为改了迁移文件却忘了同步规则值而失效过;这条测试让同类漂移立刻变红。
+func TestMigrationChecksumCompatibilityRulesMatchCurrentFiles(t *testing.T) {
+	for name, rule := range migrationChecksumCompatibilityRules {
+		content, err := migrations.FS.ReadFile(name)
+		require.NoErrorf(t, err, "规则指向不存在的迁移 %s", name)
+
+		sum := sha256.Sum256([]byte(strings.TrimSpace(string(content))))
+		actual := hex.EncodeToString(sum[:])
+		require.Equalf(t, actual, rule.fileChecksum,
+			"%s 的规则 fileChecksum 与当前文件不符 → 死规则,老库会被硬失败挡住", name)
+
+		_, ok := rule.acceptedChecksums[actual]
+		require.Truef(t, ok, "%s 的当前文件 checksum 必须落在 acceptedChecksums 内", name)
+	}
+}
+
+// 本仓的品牌改名改动了这 5 个**已应用**迁移的字节,老库(上游时代的 checksum)必须仍能启动。
+func TestMigrationChecksumCompatibilityRules_CoverRenameDamagedMigrations(t *testing.T) {
+	for _, name := range []string{
+		"001_init.sql",
+		"002_account_type_migration.sql",
+		"003_subscription.sql",
+		"038_ops_errors_resolution_retry_results_and_standardize_classification.sql",
+		"052_migrate_upstream_to_apikey.sql",
+	} {
+		rule, ok := migrationChecksumCompatibilityRules[name]
+		require.Truef(t, ok, "改名误伤的迁移 %s 缺少兼容规则", name)
+		require.NotEmpty(t, rule.acceptedDBChecksum, "%s 必须接受上游时代的 db checksum", name)
+	}
 }
 
 func TestApplyMigrationsFS_CheckMigrationQueryError(t *testing.T) {

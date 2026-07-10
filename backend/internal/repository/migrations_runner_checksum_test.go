@@ -43,13 +43,33 @@ func TestIsMigrationChecksumCompatible(t *testing.T) {
 		require.True(t, ok)
 	})
 
+	// 注意:001_init.sql 已因品牌改名误伤而进入白名单,不再是「非白名单」的反例。
+	// 这里改用一个确实不在规则表里的迁移,否则本子测试会退化成「白名单但 checksum 不匹配」。
 	t.Run("非白名单迁移不兼容", func(t *testing.T) {
 		ok := isMigrationChecksumCompatible(
-			"001_init.sql",
+			"004_add_redeem_code_notes.sql",
 			"182c193f3359946cf094090cd9e57d5c3fd9abaffbc1e8fc378646b8a6fa12b4",
 			"82de761156e03876653e7a6a4eee883cd927847036f779b0b9f34c42a8af7a7d",
 		)
 		require.False(t, ok)
+	})
+
+	t.Run("白名单迁移在未知db checksum下仍不兼容", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"001_init.sql",
+			"0000000000000000000000000000000000000000000000000000000000000000",
+			"9aba52a1f82ba0605a4330184d1dadd7fb74b083aa65961c7479f97c9db0baf9",
+		)
+		require.False(t, ok)
+	})
+
+	t.Run("001改名前的上游db checksum可兼容当前文件", func(t *testing.T) {
+		ok := isMigrationChecksumCompatible(
+			"001_init.sql",
+			"9ba0369779484625edcea7a7d1d4582397e31546db9149b05004990a3f16c630",
+			"9aba52a1f82ba0605a4330184d1dadd7fb74b083aa65961c7479f97c9db0baf9",
+		)
+		require.True(t, ok)
 	})
 
 	t.Run("109历史checksum可兼容", func(t *testing.T) {
