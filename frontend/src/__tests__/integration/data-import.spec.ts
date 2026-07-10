@@ -134,6 +134,71 @@ describe('ImportDataModal', () => {
     })
   })
 
+  // 后端 validateDataHeader 接受 dataType("hermes-proxy-data")与 acceptedLegacyDataTypes
+  // (sub2api 时期)。前端预校验必须接受同一集合,否则会拒收后端认可的数据包。
+  it.each(['hermes-proxy-data', 'sub2api-data', 'sub2api-bundle'])(
+    'accepts payloads declaring type=%s',
+    async (dataType) => {
+      const { adminAPI } = await import('@/api/admin')
+      vi.mocked(adminAPI.accounts.importData).mockResolvedValue({
+        proxy_created: 0,
+        proxy_reused: 0,
+        proxy_failed: 0,
+        account_created: 1,
+        account_failed: 0
+      })
+
+      const wrapper = mountModal()
+      const input = wrapper.find('input[type="file"]')
+      setInputFiles(input.element, [
+        makeJsonFile(
+          'typed.json',
+          JSON.stringify({
+            type: dataType,
+            version: 1,
+            exported_at: '2026-07-05T00:00:00Z',
+            proxies: [],
+            accounts: [{ name: 'a' }]
+          })
+        )
+      ])
+
+      await input.trigger('change')
+      await wrapper.find('form').trigger('submit')
+      await flushPromises()
+
+      expect(showError).not.toHaveBeenCalled()
+      expect(adminAPI.accounts.importData).toHaveBeenCalledWith({
+        data: expect.objectContaining({ accounts: [{ name: 'a' }] }),
+        skip_default_group_bind: true
+      })
+    }
+  )
+
+  it('拒绝未知 type 的数据包', async () => {
+    const { adminAPI } = await import('@/api/admin')
+    const wrapper = mountModal()
+    const input = wrapper.find('input[type="file"]')
+    setInputFiles(input.element, [
+      makeJsonFile(
+        'alien.json',
+        JSON.stringify({
+          type: 'some-other-tool-data',
+          exported_at: '2026-07-05T00:00:00Z',
+          proxies: [],
+          accounts: [{ name: 'a' }]
+        })
+      )
+    ])
+
+    await input.trigger('change')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(showError).toHaveBeenCalledWith('admin.accounts.dataImportInvalidFile')
+    expect(adminAPI.accounts.importData).not.toHaveBeenCalled()
+  })
+
   it('merges multiple selected JSON files before importing', async () => {
     const { adminAPI } = await import('@/api/admin')
     vi.mocked(adminAPI.accounts.importData).mockResolvedValue({

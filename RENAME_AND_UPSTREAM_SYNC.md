@@ -253,6 +253,12 @@ rg -n --hidden --glob '!.git' '([sS][uU][bB]2[aA][pP][iI])'
 - 前端 `ipGeoLookup` 的 localStorage 缓存键、`BatchImageGuideView` 的 IndexedDB 名与请求 ID 前缀
   （都是可丢弃的本地缓存 / 自家幂等前缀，与 `sub2api_login_agreement_consent` 不同：
   后者改名会让老用户重弹同意框，前者改名只是一次性缓存失效）
+- ⚠️ **上游新增的「校验白名单」会内联上游品牌串**，改名回归只删不加就会让前端拒收后端认可的数据。
+  v0.1.149 引入 `ImportDataModal.vue` 的 `SUPPORTED_DATA_TYPES = ['sub2api-data','sub2api-bundle']`，
+  而本仓后端 `dataType` 早已是 `hermes-proxy-data`——那两个 `sub2api-*` 是**该留的历史兼容值**，
+  但必须**补上**当前值，否则前端预校验直接 `dataImportInvalidFile`。
+  判据：凡是「值集合」，要与后端 `validateDataHeader` 接受的集合逐一对应，别只做字符串替换。
+  已加回归测试 `data-import.spec.ts::accepts payloads declaring type=%s`（三值 + 未知值拒绝）。
 
 合并后必须跑的**完整验证矩阵**（裸 `go test ./...` 只是其中一个子集，绝不能单独作为「全量通过」依据——它从不编译 `-tags=embed` 出货路径，也不含 unit / integration 套件，历史上正是这一点掩盖了 HEAD 即存在的 pre-existing RED）：
 
@@ -273,6 +279,14 @@ go build -tags embed ./... && go test -tags=embed ./internal/web/...
 golangci-lint run --timeout=30m
 gofmt -l .                # golangci 默认跳 _test.go；改名易乱 import 字母序，须手补
 go mod tidy               # 不应产生 go.mod / go.sum 漂移
+
+# 3b) wire 生成物必须与 wire.go 一致：冲突里手改过 wire_gen.go 就会漂移（编译器不报）
+#     别用 `go run github.com/google/wire/cmd/wire`——缺 go.sum 条目会静默失败、
+#     留下一个「无 diff」的假绿。在临时 module 里装成二进制再跑：
+#       mkdir /tmp/wt && cd /tmp/wt && go mod init wt \
+#         && GOBIN=/tmp/wt/bin go install github.com/google/wire/cmd/wire@v0.7.0
+#     然后 backend/ 下 `/tmp/wt/bin/wire gen ./cmd/server/ && git diff --exit-code cmd/server/wire_gen.go`
+#     v0.1.149 那次实测漂移=纯声明重排（行多重集相同、provider 一个没少），已改为采用生成物
 
 # 4) （可选）数据竞争
 go test -race ./...
@@ -311,12 +325,43 @@ cd .. && python3 -m unittest discover -s tools -p 'restart_test.py'
 
 **反直觉的一条**：本仓曾为 `go test -race` 删光三个包里的 per-test `gin.SetMode`（改包级 init 基石）。
 上游 v0.1.149 又带回了 ~69 处 per-test `gin.SetMode`，看起来像回归——但实测
-`go test -race ./...` 是 **0 竞争**（那批新测试不带 `t.Parallel()`，没有并行读者）。
+`go test -race ./...` 是 **0 竞争**。机制（不只是「跑了没报」）：Go 的并行测试在**串行阶段跑完之后**
+才恢复，`gin.SetMode` 全都落在非并行测试体内，与并行测试不重叠。已用脚本核过
+**没有任何一个函数同时含 `gin.SetMode` 和 `t.Parallel()`**——这才是它安全的真正理由。
+（`service` 包里 23 个文件有 SetMode、47 个文件有 t.Parallel，只是从不在同一函数内。）
 **先取证再动手**：不要凭「看起来违反了我们的约定」就去改上游测试文件，那只会平添下次合并的冲突面。
 
 另外，符号撞名是这类合并的典型翻车点：上游新增 `batch_image_repo.go` 里的 `rowScanner`
 和本仓 `audit_repo.go` 同名同包 → 编译失败。改**本仓侧**（`auditRowScanner`），
 不要改上游文件，否则每次合并都要重解一遍。
+
+**被本仓改过名的文件，上游若也改了它，靠 git 的 rename detection 才能合进来**
+（`deploy/sub2api.service` → `deploy/hermes-proxy.service` 相似度 64%、
+`skills/sub2api-admin/**` → `skills/hermes-proxy-admin/**` 最低 51%，逼近 50% 默认阈值）。
+v0.1.149 这轮上游对这些路径是 **0 提交**，所以没踩到。下轮务必先查：
+`git log --oneline <base>..upstream/main -- deploy/sub2api.service skills/sub2api-admin/`
+非空就手工核对改动是否真的落到了改名后的文件里。
+
+### 5.4 事后机械核对：三个行集合检查（比逐文件肉眼 review 可靠）
+
+肉眼 review 767 个文件不现实。用「行多重集」做三个方向的差分，能把人工判断压到几十行：
+
+```bash
+BASE=$(git merge-base <fork-head> upstream/main)   # 本轮 = d3acd8e9
+# A. fork 的新增行，在合并结果里整棵树都找不到 → 可能被上游重构吃掉
+# B. fork 删掉的行，在合并结果里又出现了       → 死代码被复活
+# C. 上游的新增行（BASE 里没有），合并结果里没了 → 我方冲突解错、吃掉了上游代码
+```
+
+C 是最容易被忽略、也最危险的一个方向：A/B 只盯自己的改动，C 才能抓住
+「我把冲突解成了取我方，顺手删掉了上游新加的断言/分支」。
+判据：某行在 `graft..merged` 里被删，**当且仅当它存在于 BASE** 才是「本仓有意删除」；
+BASE 里没有 = 上游新增 → 必须解释。
+
+v0.1.149 实测：A 命中 16 行（全是尾逗号 / 上游新增兄弟项 / 有意改名），
+B 命中 1 行（`openCollector` 死键，无代码引用，无害），
+C 命中 95 行（全部是改名回归 + 上游新增的赞助商区块——本仓整块删除，一致）。
+结论：**0 处上游逻辑被吃掉**。做完这三个检查再说「合并干净」。
 
 如果 merge 成功且验证通过，再推送：
 

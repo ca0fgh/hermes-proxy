@@ -224,7 +224,9 @@ const readFileAsText = async (sourceFile: File): Promise<string> => {
   })
 }
 
-const SUPPORTED_DATA_TYPES = ['sub2api-data', 'sub2api-bundle']
+// 首项是当前导出类型(后端 dataType),其余是 sub2api 时期的历史类型(后端 acceptedLegacyDataTypes)。
+// 三者必须与后端 validateDataHeader 接受的集合逐一对应,否则前端会拒收后端认可的数据包。
+const SUPPORTED_DATA_TYPES = ['hermes-proxy-data', 'sub2api-data', 'sub2api-bundle']
 const SUPPORTED_DATA_VERSION = 1
 
 // 与后端 validateDataHeader 对齐:合并前逐文件校验,避免坏文件混入合并 payload 后
