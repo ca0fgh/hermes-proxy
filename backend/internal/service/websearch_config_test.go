@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/websearch"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/websearch"
 	"github.com/stretchr/testify/require"
 )
 

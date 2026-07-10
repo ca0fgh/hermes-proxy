@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/ctxkey"
 	"github.com/stretchr/testify/require"
 )
 

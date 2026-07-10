@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/ca0fgh/hermes-proxy/internal/domain"
 )
 
 type User struct {

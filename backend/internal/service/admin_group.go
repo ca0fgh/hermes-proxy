@@ -7,15 +7,15 @@ import (
 	"strings"
 	"time"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
+	dbent "github.com/ca0fgh/hermes-proxy/ent"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/antigravity"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/claude"
+	infraerrors "github.com/ca0fgh/hermes-proxy/internal/pkg/errors"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/geminicli"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/openai"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/pagination"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/xai"
 )
 
 // Group management implementations

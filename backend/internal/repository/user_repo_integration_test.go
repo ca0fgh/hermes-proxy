@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/ent/authidentity"
-	"github.com/Wei-Shaw/sub2api/ent/authidentitychannel"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	dbent "github.com/ca0fgh/hermes-proxy/ent"
+	"github.com/ca0fgh/hermes-proxy/ent/authidentity"
+	"github.com/ca0fgh/hermes-proxy/ent/authidentitychannel"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/pagination"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 	"github.com/stretchr/testify/suite"
 )
 

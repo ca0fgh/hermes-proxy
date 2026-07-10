@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
+	infraerrors "github.com/ca0fgh/hermes-proxy/internal/pkg/errors"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/xai"
 )
 
 const grokDefaultAccessTokenTTL = 6 * time.Hour

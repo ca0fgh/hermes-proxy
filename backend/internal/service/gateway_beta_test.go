@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/claude"
 
 	"github.com/stretchr/testify/require"
 )

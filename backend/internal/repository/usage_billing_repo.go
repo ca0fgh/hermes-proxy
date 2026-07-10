@@ -6,9 +6,9 @@ import (
 	"errors"
 	"strings"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	dbent "github.com/ca0fgh/hermes-proxy/ent"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 )
 
 type usageBillingRepository struct {

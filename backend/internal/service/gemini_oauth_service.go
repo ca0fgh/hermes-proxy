@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/ca0fgh/hermes-proxy/internal/config"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/geminicli"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/httpclient"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
 )
 
 const (

@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/ent/group"
-	"github.com/Wei-Shaw/sub2api/ent/predicate"
-	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
-	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	dbent "github.com/ca0fgh/hermes-proxy/ent"
+	"github.com/ca0fgh/hermes-proxy/ent/group"
+	"github.com/ca0fgh/hermes-proxy/ent/predicate"
+	"github.com/ca0fgh/hermes-proxy/ent/schema/mixins"
+	"github.com/ca0fgh/hermes-proxy/ent/user"
+	"github.com/ca0fgh/hermes-proxy/ent/usersubscription"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/pagination"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 )
 
 type userSubscriptionRepository struct {

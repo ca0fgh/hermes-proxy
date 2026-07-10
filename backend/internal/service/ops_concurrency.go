@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/pagination"
 )
 
 const (

@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
-	"github.com/Wei-Shaw/sub2api/ent/channelmonitorrequesttemplate"
-	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/ca0fgh/hermes-proxy/ent/channelmonitor"
+	"github.com/ca0fgh/hermes-proxy/ent/channelmonitorrequesttemplate"
+	"github.com/ca0fgh/hermes-proxy/ent/predicate"
 )
 
 // ChannelMonitorRequestTemplateUpdate is the builder for updating ChannelMonitorRequestTemplate entities.

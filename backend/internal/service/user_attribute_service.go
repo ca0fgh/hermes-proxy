@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	infraerrors "github.com/ca0fgh/hermes-proxy/internal/pkg/errors"
 )
 
 // UserAttributeService handles attribute management

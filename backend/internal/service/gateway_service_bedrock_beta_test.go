@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/ca0fgh/hermes-proxy/internal/config"
 )
 
 type betaPolicySettingRepoStub struct {

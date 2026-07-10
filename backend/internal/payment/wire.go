@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/internal/config"
+	dbent "github.com/ca0fgh/hermes-proxy/ent"
+	"github.com/ca0fgh/hermes-proxy/internal/config"
 	"github.com/google/wire"
 )
 

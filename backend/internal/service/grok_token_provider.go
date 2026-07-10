@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/util/logredact"
+	"github.com/ca0fgh/hermes-proxy/internal/util/logredact"
 )
 
 const (

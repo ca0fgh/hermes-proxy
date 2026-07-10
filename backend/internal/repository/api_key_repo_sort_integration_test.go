@@ -3,8 +3,8 @@
 package repository
 
 import (
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/pagination"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 )
 
 func (s *APIKeyRepoSuite) TestListByUserID_SortByNameAsc() {

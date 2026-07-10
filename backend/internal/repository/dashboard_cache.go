@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/hermes-proxy/internal/config"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 	"github.com/redis/go-redis/v9"
 )
 

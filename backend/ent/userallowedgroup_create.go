@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/group"
-	"github.com/Wei-Shaw/sub2api/ent/user"
-	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
+	"github.com/ca0fgh/hermes-proxy/ent/group"
+	"github.com/ca0fgh/hermes-proxy/ent/user"
+	"github.com/ca0fgh/hermes-proxy/ent/userallowedgroup"
 )
 
 // UserAllowedGroupCreate is the builder for creating a UserAllowedGroup entity.

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
+	"github.com/ca0fgh/hermes-proxy/internal/config"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/claude"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"

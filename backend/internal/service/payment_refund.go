@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
-	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
-	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
-	"github.com/Wei-Shaw/sub2api/internal/payment"
-	"github.com/Wei-Shaw/sub2api/internal/payment/provider"
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	dbent "github.com/ca0fgh/hermes-proxy/ent"
+	"github.com/ca0fgh/hermes-proxy/ent/paymentauditlog"
+	"github.com/ca0fgh/hermes-proxy/ent/paymentorder"
+	"github.com/ca0fgh/hermes-proxy/ent/paymentproviderinstance"
+	"github.com/ca0fgh/hermes-proxy/internal/payment"
+	"github.com/ca0fgh/hermes-proxy/internal/payment/provider"
+	infraerrors "github.com/ca0fgh/hermes-proxy/internal/pkg/errors"
 )
 
 // --- Refund Flow ---

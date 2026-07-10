@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	dbent "github.com/ca0fgh/hermes-proxy/ent"
+	infraerrors "github.com/ca0fgh/hermes-proxy/internal/pkg/errors"
 )
 
 func (s *PaymentService) GetPublicOrderByResumeToken(ctx context.Context, token string) (*dbent.PaymentOrder, error) {

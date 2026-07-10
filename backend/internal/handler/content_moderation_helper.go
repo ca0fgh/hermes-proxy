@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
-	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/ctxkey"
+	middleware2 "github.com/ca0fgh/hermes-proxy/internal/server/middleware"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

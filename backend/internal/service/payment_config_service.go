@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	dbent "github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
-	"github.com/Wei-Shaw/sub2api/internal/payment"
-	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	dbent "github.com/ca0fgh/hermes-proxy/ent"
+	"github.com/ca0fgh/hermes-proxy/ent/paymentproviderinstance"
+	"github.com/ca0fgh/hermes-proxy/internal/payment"
+	infraerrors "github.com/ca0fgh/hermes-proxy/internal/pkg/errors"
 )
 
 const (

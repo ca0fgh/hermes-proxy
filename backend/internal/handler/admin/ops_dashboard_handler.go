@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/response"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

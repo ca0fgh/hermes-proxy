@@ -12,10 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/announcement"
-	"github.com/Wei-Shaw/sub2api/ent/announcementread"
-	"github.com/Wei-Shaw/sub2api/ent/predicate"
-	"github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/ca0fgh/hermes-proxy/ent/announcement"
+	"github.com/ca0fgh/hermes-proxy/ent/announcementread"
+	"github.com/ca0fgh/hermes-proxy/ent/predicate"
+	"github.com/ca0fgh/hermes-proxy/ent/user"
 )
 
 // AnnouncementReadQuery is the builder for querying AnnouncementRead entities.

@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Wei-Shaw/sub2api/ent/channelmonitor"
-	"github.com/Wei-Shaw/sub2api/ent/channelmonitorhistory"
+	"github.com/ca0fgh/hermes-proxy/ent/channelmonitor"
+	"github.com/ca0fgh/hermes-proxy/ent/channelmonitorhistory"
 )
 
 // ChannelMonitorHistoryCreate is the builder for creating a ChannelMonitorHistory entity.

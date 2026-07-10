@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/pagination"
 )
 
 // PromoCodeRepository 优惠码仓储接口

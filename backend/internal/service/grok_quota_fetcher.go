@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/xai"
 )
 
 const grokQuotaSnapshotExtraKey = "grok_usage_snapshot"

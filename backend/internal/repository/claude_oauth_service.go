@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/oauth"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/proxyurl"
-	"github.com/Wei-Shaw/sub2api/internal/service"
-	"github.com/Wei-Shaw/sub2api/internal/util/logredact"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/oauth"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/proxyurl"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
+	"github.com/ca0fgh/hermes-proxy/internal/util/logredact"
 
 	"github.com/imroc/req/v3"
 )

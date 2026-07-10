@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/httpclient"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/httpclient"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 )
 
 type githubReleaseClient struct {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	pkghttputil "github.com/Wei-Shaw/sub2api/internal/pkg/httputil"
+	"github.com/ca0fgh/hermes-proxy/internal/config"
+	pkghttputil "github.com/ca0fgh/hermes-proxy/internal/pkg/httputil"
 )
 
 func extractMaxBytesError(err error) (*http.MaxBytesError, bool) {

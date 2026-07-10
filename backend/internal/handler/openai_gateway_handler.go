@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/config"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/ip"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
-	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/hermes-proxy/internal/config"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/ctxkey"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/ip"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
+	middleware2 "github.com/ca0fgh/hermes-proxy/internal/server/middleware"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 
 	coderws "github.com/coder/websocket"
 	"github.com/gin-gonic/gin"

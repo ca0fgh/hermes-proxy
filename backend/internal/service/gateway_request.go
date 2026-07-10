@@ -11,9 +11,9 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/Wei-Shaw/sub2api/internal/domain"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/ca0fgh/hermes-proxy/internal/domain"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/antigravity"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )

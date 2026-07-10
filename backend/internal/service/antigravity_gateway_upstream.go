@@ -12,8 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/antigravity"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 

@@ -3,8 +3,8 @@ package admin
 import (
 	"testing"
 
-	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
-	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/ca0fgh/hermes-proxy/internal/handler/dto"
+	"github.com/ca0fgh/hermes-proxy/internal/service"
 	"github.com/stretchr/testify/require"
 )
 

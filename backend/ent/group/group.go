@@ -8,7 +8,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/ca0fgh/hermes-proxy/internal/domain"
 )
 
 const (
@@ -257,7 +257,7 @@ func ValidColumn(column string) bool {
 // package on the initialization of the application. Therefore,
 // it should be imported in the main as follows:
 //
-//	import _ "github.com/Wei-Shaw/sub2api/ent/runtime"
+//	import _ "github.com/ca0fgh/hermes-proxy/ent/runtime"
 var (
 	Hooks        [1]ent.Hook
 	Interceptors [1]ent.Interceptor

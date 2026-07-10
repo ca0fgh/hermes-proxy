@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/migrations"
+	"github.com/ca0fgh/hermes-proxy/migrations"
 )
 
 // schemaMigrationsTableDDL 定义迁移记录表的 DDL。

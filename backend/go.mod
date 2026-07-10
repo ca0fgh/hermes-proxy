@@ -1,4 +1,4 @@
-module github.com/Wei-Shaw/sub2api
+module github.com/ca0fgh/hermes-proxy
 
 go 1.26.5
 
