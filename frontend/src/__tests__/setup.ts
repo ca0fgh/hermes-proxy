@@ -57,22 +57,18 @@ if (typeof globalThis.cancelIdleCallback === 'undefined') {
   }) as unknown as typeof cancelIdleCallback
 }
 
-// Mock matchMedia (jsdom 不实现;桌面视口判定依赖它,默认按桌面视口处理)
+// Mock matchMedia (jsdom 未实现;DataTable 等组件依赖它做桌面/移动分支)
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
-  Object.defineProperty(window, 'matchMedia', {
-    configurable: true,
-    writable: true,
-    value: (query: string) => ({
-      matches: true,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn()
-    })
-  })
+  window.matchMedia = ((query: string) => ({
+    matches: true, // 测试默认按桌面视口渲染表格
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })) as unknown as typeof window.matchMedia
 }
 
 // Mock IntersectionObserver

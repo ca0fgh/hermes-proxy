@@ -19,6 +19,9 @@ import (
 	"github.com/ca0fgh/hermes-proxy/ent/apikey"
 	"github.com/ca0fgh/hermes-proxy/ent/authidentity"
 	"github.com/ca0fgh/hermes-proxy/ent/authidentitychannel"
+	"github.com/ca0fgh/hermes-proxy/ent/batchimageevent"
+	"github.com/ca0fgh/hermes-proxy/ent/batchimageitem"
+	"github.com/ca0fgh/hermes-proxy/ent/batchimagejob"
 	"github.com/ca0fgh/hermes-proxy/ent/channelmonitor"
 	"github.com/ca0fgh/hermes-proxy/ent/channelmonitordailyrollup"
 	"github.com/ca0fgh/hermes-proxy/ent/channelmonitorhistory"
@@ -114,6 +117,9 @@ func checkColumn(t, c string) error {
 			announcementread.Table:              announcementread.ValidColumn,
 			authidentity.Table:                  authidentity.ValidColumn,
 			authidentitychannel.Table:           authidentitychannel.ValidColumn,
+			batchimageevent.Table:               batchimageevent.ValidColumn,
+			batchimageitem.Table:                batchimageitem.ValidColumn,
+			batchimagejob.Table:                 batchimagejob.ValidColumn,
 			channelmonitor.Table:                channelmonitor.ValidColumn,
 			channelmonitordailyrollup.Table:     channelmonitordailyrollup.ValidColumn,
 			channelmonitorhistory.Table:         channelmonitorhistory.ValidColumn,

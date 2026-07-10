@@ -332,7 +332,8 @@ pnpm run build
 
 # 5. 编译后端（嵌入前端）
 cd ../backend
-go build -tags embed -o hermes-proxy ./cmd/server
+VERSION="$(./scripts/resolve-version.sh)"
+go build -tags embed -ldflags="-X main.Version=${VERSION}" -o hermes-proxy ./cmd/server
 
 # 6. 创建配置文件
 cp ../deploy/config.example.yaml ./config.yaml
@@ -426,20 +427,20 @@ gateway:
 
 **⚠️ 安全警告：HTTP URL 配置**
 
-当 `security.url_allowlist.enabled=false` 时，系统默认执行最小 URL 校验，**拒绝 HTTP URL**，仅允许 HTTPS。要允许 HTTP URL（例如用于开发或内网测试），必须显式设置：
+当 `security.url_allowlist.enabled=false` 时，系统仅执行最小 URL 校验，且**默认允许 HTTP URL**（开发友好模式，Docker Compose 部署的默认值一致）。生产环境建议显式收紧为仅允许 HTTPS：
 
 ```yaml
 security:
   url_allowlist:
     enabled: false                # 禁用白名单检查
-    allow_insecure_http: true     # 允许 HTTP URL（⚠️ 不安全）
+    allow_insecure_http: false    # 仅允许 HTTPS（生产环境推荐）
 ```
 
 **或通过环境变量：**
 
 ```bash
 SECURITY_URL_ALLOWLIST_ENABLED=false
-SECURITY_URL_ALLOWLIST_ALLOW_INSECURE_HTTP=true
+SECURITY_URL_ALLOWLIST_ALLOW_INSECURE_HTTP=false
 ```
 
 **允许 HTTP 的风险：**
@@ -453,7 +454,7 @@ SECURITY_URL_ALLOWLIST_ALLOW_INSECURE_HTTP=true
 - ✅ 获取 HTTPS 前测试账号连通性
 - ❌ 生产环境（仅使用 HTTPS）
 
-**未设置此项时的错误示例：**
+**设置 `allow_insecure_http: false` 后，HTTP URL 会返回如下错误：**
 ```
 Invalid base URL: invalid url scheme: http
 ```
@@ -550,10 +551,6 @@ Antigravity 账户支持可选的**混合调度**功能。开启后，通用端�
 
 > **⚠️ 注意**：Anthropic Claude 和 Antigravity Claude **不能在同一上下文中混合使用**，请通过分组功能做好隔离。
 
-
-### 已知问题
-在 Claude Code 中，无法自动退出Plan Mode。（正常使用原生Claude Api时，Plan 完成后，Claude Code会弹出弹出选项让用户同意或拒绝Plan。） 
-解决办法：shift + Tab，手动退出Plan mode，然后输入内容 告诉 Claude Code 同意或拒绝 Plan
 ---
 
 ## 项目结构
@@ -583,16 +580,6 @@ hermes-proxy/
     ├── config.example.yaml   # 二进制部署完整配置文件
     └── install.sh            # 一键安装脚本
 ```
-
-## 免责声明
-
-> **使用本项目前请仔细阅读：**
->
-> :rotating_light: **服务条款风险**: 使用本项目可能违反 Anthropic 的服务条款。请在使用前仔细阅读 Anthropic 的用户协议，使用本项目的一切风险由用户自行承担。
->
-> :book: **免责声明**: 本项目仅供技术学习和研究使用，作者不对因使用本项目导致的账户封禁、服务中断或其他损失承担任何责任。
-
----
 
 ## Star History
 

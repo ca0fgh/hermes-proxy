@@ -12,7 +12,6 @@ import (
 	"github.com/ca0fgh/hermes-proxy/ent/paymentauditlog"
 	"github.com/ca0fgh/hermes-proxy/ent/paymentorder"
 	"github.com/ca0fgh/hermes-proxy/internal/payment"
-	"github.com/ca0fgh/hermes-proxy/internal/payment/provider"
 	infraerrors "github.com/ca0fgh/hermes-proxy/internal/pkg/errors"
 )
 
@@ -454,7 +453,7 @@ func (s *PaymentService) createProviderFromInstance(ctx context.Context, inst *d
 	}
 
 	instID := strconv.FormatInt(int64(inst.ID), 10)
-	prov, err := provider.CreateProvider(inst.ProviderKey, instID, cfg)
+	prov, err := createPaymentProviderFromInstance(inst.ProviderKey, instID, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("create provider from instance: %w", err)
 	}

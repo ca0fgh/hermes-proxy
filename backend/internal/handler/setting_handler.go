@@ -7,6 +7,7 @@ import (
 
 	"github.com/ca0fgh/hermes-proxy/internal/handler/dto"
 	"github.com/ca0fgh/hermes-proxy/internal/pkg/response"
+	"github.com/ca0fgh/hermes-proxy/internal/pkg/timezone"
 	"github.com/ca0fgh/hermes-proxy/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -85,6 +86,8 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		PaymentEnabled:                   settings.PaymentEnabled,
 		Version:                          h.version,
+		ServerTimezone:                   timezone.Name(),
+		ServerUTCOffset:                  timezone.UTCOffset(),
 		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
 		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,
 		BalanceLowNotifyThreshold:        settings.BalanceLowNotifyThreshold,

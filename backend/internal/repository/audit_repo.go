@@ -144,11 +144,11 @@ WHERE id = $1
 	return scanAuditEvent(row)
 }
 
-type rowScanner interface {
+type auditRowScanner interface {
 	Scan(dest ...any) error
 }
 
-func scanAuditEvent(scanner rowScanner) (*service.AuditEvent, error) {
+func scanAuditEvent(scanner auditRowScanner) (*service.AuditEvent, error) {
 	var (
 		event            service.AuditEvent
 		requestType      int16
