@@ -17,6 +17,8 @@ jobs:
           go-version-file: backend/go.mod
           check-latest: false
           cache: true
+          # go.sum 在 backend/ 下;不指路径 setup-go 会在仓库根找不到、缓存永远不命中。
+          cache-dependency-path: backend/go.sum
       - name: Restart script tests
         run: python3 -m unittest tools/restart_test.py
       - name: Verify Go version
@@ -28,6 +30,26 @@ jobs:
       - name: Integration tests
         working-directory: backend
         run: make test-integration
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - name: Frontend typecheck and critical vitest
+        run: make test-frontend
 
   golangci-lint:
     runs-on: ubuntu-latest

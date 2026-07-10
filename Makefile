@@ -1,12 +1,16 @@
 .PHONY: build build-backend build-frontend build-datamanagementd test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan
 
+# CI 只跑这个子集(不是全量 test:run)。跨前后端契约的回归测试必须列进来,
+# 否则改坏了 CI 也是绿的 —— data-import 就是被品牌改名改坏过的前后端契约。
 FRONTEND_CRITICAL_VITEST := \
 	src/views/auth/__tests__/LinuxDoCallbackView.spec.ts \
 	src/views/auth/__tests__/WechatCallbackView.spec.ts \
 	src/views/user/__tests__/PaymentView.spec.ts \
 	src/views/user/__tests__/PaymentResultView.spec.ts \
 	src/components/user/profile/__tests__/ProfileInfoCard.spec.ts \
-	src/views/admin/__tests__/SettingsView.spec.ts
+	src/views/admin/__tests__/SettingsView.spec.ts \
+	src/__tests__/integration/data-import.spec.ts \
+	src/__tests__/integration/release-artifact-names.spec.ts
 
 .PHONY: test-restart-script
 
