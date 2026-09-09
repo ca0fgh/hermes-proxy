@@ -128,7 +128,7 @@ backend/.installed
 !tools/tests/*.py
 CLAUDE.md
 .claude
-scripts
+/scripts/
 !backend/scripts/
 !backend/scripts/resolve-version.sh
 .code-review-state
@@ -148,6 +148,7 @@ vite.config.js
 __pycache__/
 *.pyc
 docs/*
+!docs/BATCH_IMAGE_MVP.md
 !docs/PAYMENT.md
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
@@ -158,3 +159,17 @@ docs/*
 frontend/coverage/
 aicodex
 output/
+
+# 本机环境配置；脱敏示例可以提交。
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+!.env.*.example
+!.env.*.sample
+!.env.*.template
+
+# 本机工具状态、系统杂项和可重新生成的缓存。
+.pytest_cache/
+.venv/
