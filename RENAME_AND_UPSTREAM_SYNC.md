@@ -23,7 +23,7 @@
 本地路径变化：
 
 - 旧路径：`/Users/money/project/subproject/<old-name>`
-- 新路径：`/Users/money/project/subproject/hermes-proxy`
+- 新路径：`/Users/money/workflow/submodule/hermes-proxy`
 
 子项目重命名提交：
 
@@ -91,14 +91,14 @@ upstream <已配置的原始上游仓库地址>
 在子项目中已完成以下验证：
 
 ```bash
-cd /Users/money/project/subproject/hermes-proxy/backend
+cd /Users/money/workflow/submodule/hermes-proxy/backend
 # 注意：裸 `go test ./...` 只覆盖 untagged 包，不是「全量」。
 # 完整全量验证见 §5「合并后必须跑的完整验证矩阵」。
 make test-unit               # = go test -tags=unit ./...
 make test-integration        # = go test -tags=integration ./...（testcontainers 起 PG/Redis）
 go build -tags embed ./...   # 出货编译路径（需先填充 backend/internal/web/dist）
 
-cd /Users/money/project/subproject/hermes-proxy/frontend
+cd /Users/money/workflow/submodule/hermes-proxy/frontend
 corepack prepare pnpm@9.15.9 --activate
 pnpm install --frozen-lockfile && pnpm run build   # 比 typecheck 严
 ```
@@ -127,7 +127,7 @@ pnpm install --frozen-lockfile && pnpm run build   # 比 typecheck 严
 
 路径：
 
-- `/Users/money/project/subproject/hermes-proxy`
+- `/Users/money/workflow/submodule/hermes-proxy`
 
 分支：
 
@@ -160,7 +160,7 @@ upstream <已配置的原始上游仓库地址>
 
 子模块路径：
 
-- `subproject/hermes-proxy`
+- `submodule/hermes-proxy`
 
 ## 5. 后续继续同步上游的标准流程
 
@@ -219,7 +219,7 @@ v0.1.139→v0.1.149 那次，68 个冲突里 41 个由此自动收敛，只剩 2
 可直接执行：
 
 ```bash
-cd /Users/money/project/subproject/hermes-proxy
+cd /Users/money/workflow/submodule/hermes-proxy
 
 rg -n --hidden --glob '!.git' '([sS][uU][bB]2[aA][pP][iI])'
 ```
@@ -460,7 +460,7 @@ git push origin main
 ```bash
 cd /Users/money/project
 
-git add subproject/hermes-proxy
+git add submodule/hermes-proxy
 git commit -m "Update hermes-proxy submodule"
 git push origin main
 ```
